@@ -27,10 +27,15 @@
 - Tratamento resiliente de falhas em webhooks assíncronos e chamadas externas, com logs estruturados para facilitar rastreamento e depuração.
 - Aderência ao Python 3.11+, type hints explícitos, formatação consistente e boas práticas de código limpo.
 
+### VI. Fluxo de Trabalho de Git & Governança de Código
+- **Proibição de Push Direto na Main:** A branch `main` é protegida. É estritamente proibido realizar `git push` diretamente na `main`.
+- **Fluxo de PRs:** Todo e qualquer código deve entrar na `main` através de uma Pull Request (PR) vinda de uma branch de feature (`feat/`), fix (`fix/`) ou documentação (`docs/`).
+- **Revisão:** PRs devem ser revisados e aprovados por pelo menos um integrante do time antes do merge.
+
 ## Governança & Uso com Agentes de IA
 
 - Esta constituição estabelece os princípios invioláveis para desenvolvedores humanos e agentes de IA que atuam no repositório.
 - Agentes de IA (Copilot, Cursor, Claude Code, Antigravity, etc.) devem consultar esta constituição antes de planejar e implementar qualquer código.
 - Qualquer proposta que viole estes princípios deve ser explicitamente justificada e aprovada pelo time.
 
-**Versão**: 1.0.0 | **Ratificado**: 2026-09-24 | **Última Atualização**: 2026-09-24
+**Versão**: 1.1.0 | **Ratificado**: 2026-09-24 | **Última Atualização**: 2026-09-25
