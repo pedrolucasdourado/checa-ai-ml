@@ -1,10 +1,11 @@
 <div align="center">
-  <img src="https://github.com/pedrolucasdourado/checa-ai/blob/main/assets/logo.png?raw=true" alt="Logo do checa-ai" width="320" />
+  <img src="assets/logo.png" alt="Logo do checa-ai" width="320" />
 
   # Checa AI - Machine Learning Model
 
   Este repositório contém a inteligência por trás do **Checa AI**. Aqui é onde desenvolvemos, treinamos e versionamos os modelos de Machine Learning que são consumidos pelo [checa-ai-backend](https://github.com/pedrolucasdourado/checa-ai-backend).
 </div>
+
 
 ---
 
@@ -59,6 +60,3 @@ pip install -r requirements.txt
 | <img src="https://github.com/jhsribeiro.png" width="60" alt="Jhiovana Ribeiro" /> | [Jhiovana Ribeiro](https://github.com/jhsribeiro) | Data Specialist / Data Engineering (ETL) |
 | <img src="https://github.com/LeoAlec.png" width="60" alt="Leo Alec" /> | [Leo Alec](https://github.com/LeoAlec) | Data Specialist / Data Science |
 | <img src="https://github.com/NasserCaixeta.png" width="60" alt="Nasser Camêllo Caixeta" /> | [Nasser Camêllo Caixeta](https://github.com/NasserCaixeta) | Backend Specialist / AI Orchestrator |
-
----
-Desenvolvido para o projeto Checa AI.
