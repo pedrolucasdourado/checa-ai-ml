@@ -1,0 +1,16 @@
+pandas
+numpy
+scikit-learn
+joblib
+matplotlib
+seaborn
+jupyterlab
+# If using a framework:
+# torch
+# tensorflow
+# xgboost
+# lightgbm
+# For the API layer:
+fastapi
+uvicorn
+pydantic
