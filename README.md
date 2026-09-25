@@ -1,17 +1,17 @@
 <div align="center">
   <img src="https://github.com/pedrolucasdourado/checa-ai/blob/main/assets/logo.png?raw=true" alt="Logo do checa-ai" width="320" />
 
-  # 🤖 Checa AI - Machine Learning Model
+  # Checa AI - Machine Learning Model
 
   Este repositório contém a inteligência por trás do **Checa AI**. Aqui é onde desenvolvemos, treinamos e versionamos os modelos de Machine Learning que são consumidos pelo [checa-ai-backend](https://github.com/pedrolucasdourado/checa-ai-backend).
 </div>
 
 ---
 
-## 🎯 Objetivo
+## Objetivo
 O objetivo deste módulo é fornecer previsões e classificações precisas para a verificação de fake news e desinformação, servindo como o "cérebro" da aplicação e permitindo classificações granulares para lidar com a ambiguidade da desinformação.
 
-## 🏗️ Estrutura do Projeto
+## Estrutura do Projeto
 Seguimos o padrão **Cookiecutter Data Science** para garantir reprodutibilidade e organização:
 
 ```text
@@ -28,7 +28,7 @@ Seguimos o padrão **Cookiecutter Data Science** para garantir reprodutibilidade
     └── visualization/  # Scripts de visualização de dados
 ```
 
-## 🚀 Como Executar
+## Como Executar
 
 ### 1. Instalação
 Instale as dependências necessárias:
@@ -42,14 +42,14 @@ pip install -r requirements.txt
 3. **Treinamento**: Execute os scripts em `src/models/` para gerar o modelo final.
 4. **Exportação**: O modelo final será salvo na pasta `models/` para ser consumido pelo backend.
 
-## 🛠️ Tecnologias Utilizadas
+## Tecnologias Utilizadas
 - **Linguagem:** Python 3.x
 - **Manipulação de Dados:** Pandas, NumPy
 - **Machine Learning:** Scikit-learn, [OUTRAS LIBS]
 - **API/Serviço:** FastAPI (se aplicável)
 - **Ambiente:** Jupyter Notebooks
 
-## 👥 Equipe
+## Equipe
 **Grupo 09 — Residência de IA, Instituto Eldorado.**
 
 | | Integrante | Papel |
@@ -61,4 +61,4 @@ pip install -r requirements.txt
 | <img src="https://github.com/NasserCaixeta.png" width="60" alt="Nasser Camêllo Caixeta" /> | [Nasser Camêllo Caixeta](https://github.com/NasserCaixeta) | Backend Specialist / AI Orchestrator |
 
 ---
-Desenvolvido com ❤️ para o projeto Checa AI.
+Desenvolvido para o projeto Checa AI.
