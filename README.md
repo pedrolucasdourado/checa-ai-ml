@@ -8,10 +8,10 @@
 
 ---
 
-## 🎯 Objetivo
+## Objetivo
 O objetivo deste módulo é fornecer previsões e classificações precisas para a verificação de fake news e desinformação, servindo como o "cérebro" da aplicação e permitindo classificações granulares para lidar com a ambiguidade da desinformação.
 
-## 📊 Análise de Dados (EDA)
+## Análise de Dados (EDA)
 Realizamos uma auditoria rigorosa nos datasets para garantir a qualidade do treinamento e evitar vieses (*shortcut learning*).
 
 **Resumo do Corpus:**
@@ -25,7 +25,7 @@ Realizamos uma auditoria rigorosa nos datasets para garantir a qualidade do trei
 - **Leakage:** Detecção de "assinaturas" de sites de checagem (ex: G1, Lupa), essenciais para a limpeza dos dados e evitar que o modelo aprenda a fonte em vez do conteúdo.
 - **Estilometria:** Notou-se maior densidade de exclamações e uso de Caps Lock em notícias falsas.
 
-## 🏗️ Estrutura do Projeto
+## Estrutura do Projeto
 Seguimos o padrão **Cookiecutter Data Science** para garantir reprodutibilidade e organização:
 
 ```text
@@ -42,7 +42,7 @@ Seguimos o padrão **Cookiecutter Data Science** para garantir reprodutibilidade
     └── visualization/  # Scripts de visualização de dados
 ```
 
-## 🚀 Como Executar
+## Como Executar
 
 ### 1. Instalação
 Instale as dependências necessárias:
@@ -56,14 +56,14 @@ pip install -r requirements.txt
 3. **Treinamento**: Execute os scripts em `src/models/` para gerar o modelo final.
 4. **Exportação**: O modelo final será salvo na pasta `models/` para ser consumido pelo backend.
 
-## 🛠️ Tecnologias Utilizadas
+## Tecnologias Utilizadas
 - **Linguagem:** Python 3.x
 - **Manipulação de Dados:** Pandas, NumPy
 - **Machine Learning:** Scikit-learn, Transformers (BERTimbau)
 - **API/Serviço:** FastAPI (se aplicável)
 - **Ambiente:** Jupyter Notebooks
 
-## 👥 Equipe
+## Equipe
 **Grupo 09 — Residência de IA, Instituto Eldorado.**
 
 | | Integrante | Papel |
