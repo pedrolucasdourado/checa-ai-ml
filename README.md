@@ -1,16 +1,20 @@
-# 🤖 Checa AI - Machine Learning Model
+<div align="center">
+  <img src="https://github.com/pedrolucasdourado/checa-ai/blob/main/assets/logo.png?raw=true" alt="Logo do checa-ai" width="320" />
 
-![Checa AI Logo]([LOGO_URL_HERE])
+  # 🤖 Checa AI - Machine Learning Model
 
-Este repositório contém a inteligência por trás do **Checa AI**. Aqui é onde desenvolvemos, treinamos e versionamos os modelos de Machine Learning que são consumidos pelo [checa-ai-backend](https://github.com/pedrolucasdourado/checa-ai-backend).
+  Este repositório contém a inteligência por trás do **Checa AI**. Aqui é onde desenvolvemos, treinamos e versionamos os modelos de Machine Learning que são consumidos pelo [checa-ai-backend](https://github.com/pedrolucasdourado/checa-ai-backend).
+</div>
+
+---
 
 ## 🎯 Objetivo
-O objetivo deste módulo é fornecer previsões/classificações precisas para [DESCREVER O QUE O MODELO FAZ, EX: detecção de fake news, análise de sentimentos, etc], servindo como o "cérebro" da aplicação.
+O objetivo deste módulo é fornecer previsões e classificações precisas para a verificação de fake news e desinformação, servindo como o "cérebro" da aplicação e permitindo classificações granulares para lidar com a ambiguidade da desinformação.
 
 ## 🏗️ Estrutura do Projeto
 Seguimos o padrão **Cookiecutter Data Science** para garantir reprodutibilidade e organização:
 
-```
+```text
 ├── data/               # Dados (raw, processed, interim, external)
 ├── docs/               # Documentação do modelo e experimentos
 ├── models/             # Modelos treinados e serializados (.pkl, .joblib, etc)
@@ -46,7 +50,15 @@ pip install -r requirements.txt
 - **Ambiente:** Jupyter Notebooks
 
 ## 👥 Equipe
-[COPIAR INTEGRANTES DO REPO BACKEND AQUI]
+**Grupo 09 — Residência de IA, Instituto Eldorado.**
+
+| | Integrante | Papel |
+|---|---|---|
+| <img src="https://github.com/AmandaElisa.png" width="60" alt="Amanda Elisa" /> | [Amanda Elisa de Oliveira Carvalho](https://github.com/AmandaElisa) | Scrum Master (Líder) & AI Builder |
+| <img src="https://github.com/pedrolucasdourado.png" width="60" alt="Pedro Lucas" /> | [Pedro Lucas Dourado Santos](https://github.com/pedrolucasdourado) | Product Owner & Full-Stack/AI Builder |
+| <img src="https://github.com/jhsribeiro.png" width="60" alt="Jhiovana Ribeiro" /> | [Jhiovana Ribeiro](https://github.com/jhsribeiro) | Data Specialist / Data Engineering (ETL) |
+| <img src="https://github.com/LeoAlec.png" width="60" alt="Leo Alec" /> | [Leo Alec](https://github.com/LeoAlec) | Data Specialist / Data Science |
+| <img src="https://github.com/NasserCaixeta.png" width="60" alt="Nasser Camêllo Caixeta" /> | [Nasser Camêllo Caixeta](https://github.com/NasserCaixeta) | Backend Specialist / AI Orchestrator |
 
 ---
 Desenvolvido com ❤️ para o projeto Checa AI.
