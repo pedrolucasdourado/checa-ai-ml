@@ -27,6 +27,12 @@
 - Tratamento resiliente de falhas em webhooks assíncronos e chamadas externas, com logs estruturados para facilitar rastreamento e depuração.
 - Aderência ao Python 3.11+, type hints explícitos, formatação consistente e boas práticas de código limpo.
 
+### VI. Fluxo de Trabalho de Git & Governança de Código
+- **Proibição de Push Direto na Main:** A branch `main` é protegida. É estritamente proibido realizar `git push` diretamente na `main`.
+- **Fluxo de PRs:** Todo e qualquer código deve entrar na `main` através de uma Pull Request (PR) vinda de uma branch de feature (`feat/`), fix (`fix/`) ou documentação (`docs/`).
+- **Revisão:** PRs devem ser revisados e aprovados por pelo menos um integrante do time antes do merge.
+- **Higiene de Branches:** Para evitar o acúmulo de branches obsoletas (*branch clutter*), todas as branches de feature/fix/docs devem ser excluídas local e remotamente imediatamente após o merge bem-sucedido para a `main`.
+
 ## Governança & Uso com Agentes de IA
 
 - Esta constituição estabelece os princípios invioláveis para desenvolvedores humanos e agentes de IA que atuam no repositório.
