@@ -35,13 +35,20 @@ env/
 .ipynb_checkpoints
 
 # Data and Models (Very important for ML)
-data/**/*
+data/*
 !data/**/.gitkeep
+!data/raw/
+!data/raw/*
 models/*.pkl
 models/*.h5
 models/*.joblib
 models/*.pt
 models/*.onnx
+
+# Exploration temporária
+exploration/
+Fake
+True
 
 # OS files
 .DS_Store
