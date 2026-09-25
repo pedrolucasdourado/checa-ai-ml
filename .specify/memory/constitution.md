@@ -26,6 +26,7 @@
 - Segredos, tokens e chaves de API devem ser carregados estritamente via variáveis de ambiente (`.env` / Pydantic Settings).
 - Tratamento resiliente de falhas em webhooks assíncronos e chamadas externas, com logs estruturados para facilitar rastreamento e depuração.
 - Aderência ao Python 3.11+, type hints explícitos, formatação consistente e boas práticas de código limpo.
+- **Identidade Visual:** É estritamente proibido o uso de emojis em arquivos de documentação oficial (como o `README.md`), visando manter a sobriedade e o profissionalismo do projeto.
 
 ### VI. Fluxo de Trabalho de Git & Governança de Código
 - **Proibição de Push Direto na Main:** A branch `main` é protegida. É estritamente proibido realizar `git push` diretamente na `main`.
