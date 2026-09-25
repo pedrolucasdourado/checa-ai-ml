@@ -6,13 +6,26 @@
   Este repositório contém a inteligência por trás do **Checa AI**. Aqui é onde desenvolvemos, treinamos e versionamos os modelos de Machine Learning que são consumidos pelo [checa-ai-backend](https://github.com/pedrolucasdourado/checa-ai-backend).
 </div>
 
-
 ---
 
-## Objetivo
+## 🎯 Objetivo
 O objetivo deste módulo é fornecer previsões e classificações precisas para a verificação de fake news e desinformação, servindo como o "cérebro" da aplicação e permitindo classificações granulares para lidar com a ambiguidade da desinformação.
 
-## Estrutura do Projeto
+## 📊 Análise de Dados (EDA)
+Realizamos uma auditoria rigorosa nos datasets para garantir a qualidade do treinamento e evitar vieses (*shortcut learning*).
+
+**Resumo do Corpus:**
+- **Volume Total:** 36.773 registros.
+- **Amostras Únicas:** 22.410 registros (após deduplicação).
+- **Bases Utilizadas:** `FakeRecogna`, `FakeTrueBr` e `fakeWhatsApp`.
+- **Compatibilidade BERT:** Mediana de **105 tokens** por texto; apenas **8.24%** dos registros excedem o limite de 512 tokens do BERTimbau.
+
+**Principais Achados:**
+- **Deduplicação:** Identificada alta taxa de duplicatas na base de WhatsApp (71%), tratadas para evitar *overfitting*.
+- **Leakage:** Detecção de "assinaturas" de sites de checagem (ex: G1, Lupa), essenciais para a limpeza dos dados e evitar que o modelo aprenda a fonte em vez do conteúdo.
+- **Estilometria:** Notou-se maior densidade de exclamações e uso de Caps Lock em notícias falsas.
+
+## 🏗️ Estrutura do Projeto
 Seguimos o padrão **Cookiecutter Data Science** para garantir reprodutibilidade e organização:
 
 ```text
@@ -29,7 +42,7 @@ Seguimos o padrão **Cookiecutter Data Science** para garantir reprodutibilidade
     └── visualization/  # Scripts de visualização de dados
 ```
 
-## Como Executar
+## 🚀 Como Executar
 
 ### 1. Instalação
 Instale as dependências necessárias:
@@ -43,14 +56,14 @@ pip install -r requirements.txt
 3. **Treinamento**: Execute os scripts em `src/models/` para gerar o modelo final.
 4. **Exportação**: O modelo final será salvo na pasta `models/` para ser consumido pelo backend.
 
-## Tecnologias Utilizadas
+## 🛠️ Tecnologias Utilizadas
 - **Linguagem:** Python 3.x
 - **Manipulação de Dados:** Pandas, NumPy
-- **Machine Learning:** Scikit-learn, [OUTRAS LIBS]
+- **Machine Learning:** Scikit-learn, Transformers (BERTimbau)
 - **API/Serviço:** FastAPI (se aplicável)
 - **Ambiente:** Jupyter Notebooks
 
-## Equipe
+## 👥 Equipe
 **Grupo 09 — Residência de IA, Instituto Eldorado.**
 
 | | Integrante | Papel |
@@ -60,3 +73,6 @@ pip install -r requirements.txt
 | <img src="https://github.com/jhsribeiro.png" width="60" alt="Jhiovana Ribeiro" /> | [Jhiovana Ribeiro](https://github.com/jhsribeiro) | Data Specialist / Data Engineering (ETL) |
 | <img src="https://github.com/LeoAlec.png" width="60" alt="Leo Alec" /> | [Leo Alec](https://github.com/LeoAlec) | Data Specialist / Data Science |
 | <img src="https://github.com/NasserCaixeta.png" width="60" alt="Nasser Camêllo Caixeta" /> | [Nasser Camêllo Caixeta](https://github.com/NasserCaixeta) | Backend Specialist / AI Orchestrator |
+
+---
+Desenvolvido para o projeto Checa AI.
