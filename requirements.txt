@@ -18,3 +18,7 @@ openpyxl
 fastapi
 uvicorn
 pydantic
+
+# --- Versionamento de dados/pipeline ---
+dvc      # dvc push/pull/repro (remote: DagsHub)
+pyyaml   # leitura de params.yaml em src/data/prepare.py
