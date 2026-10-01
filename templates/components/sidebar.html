@@ -1,0 +1,19 @@
+<nav class="sidebar">
+  <div class="sidebar-brand">
+    <span class="brand-icon">🧠</span>
+    <span class="brand-name">Checa<span class="brand-accent">AI</span></span>
+  </div>
+
+  <ul class="nav-list">
+    <li class="nav-item">
+      <a href="/debunk" class="nav-link {% if request.url.path == '/debunk' %}active{% endif %}">
+        <span class="nav-icon">🔍</span>
+        <span class="nav-label">Verificar Boato</span>
+      </a>
+    </li>
+  </ul>
+
+  <div class="sidebar-footer">
+    <span class="footer-version">v0.1.0 — RAG Pipeline</span>
+  </div>
+</nav>
