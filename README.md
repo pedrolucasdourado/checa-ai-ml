@@ -50,7 +50,28 @@ Instale as dependências necessárias:
 pip install -r requirements.txt
 ```
 
-### 2. Fluxo de Trabalho
+### 2. Acesso aos dados (DVC)
+Os dados são versionados com [DVC](https://dvc.org) e ficam no DagsHub: `https://dagshub.com/pedrolucasdourado/checa-ai-ml.dvc`. O acesso exige um token do DagsHub, mesmo com o repositório público.
+
+1. Crie uma conta no [DagsHub](https://dagshub.com) e gere um token em **Settings → Tokens**.
+2. Dentro do repositório clonado, configure as credenciais **localmente** (o `--local` grava em `.dvc/config.local`, que não é versionado; nunca coloque o token no `.dvc/config`):
+   ```bash
+   dvc remote modify --local origin auth basic
+   dvc remote modify --local origin user SEU_USUARIO_DAGSHUB
+   dvc remote modify --local origin password SEU_TOKEN
+   ```
+3. Baixe os dados:
+   ```bash
+   dvc pull data/raw/*.dvc data/processed/dataset.csv
+   ```
+   Prefira esse comando ao `dvc pull` sem argumentos, que pode remover os arquivos de `data/raw` após o download.
+
+Problemas comuns:
+- `Checkout failed ... data/processed/dataset.csv`: o remote respondeu 401 (credenciais ausentes ou incorretas). Refaça o passo 2.
+- `SSLCertVerificationError ... self-signed certificate`: a rede (proxy, VPN ou antivírus) intercepta o HTTPS. Troque de rede ou configure `dvc remote modify --local origin ssl_verify /caminho/ca.pem`.
+- Para enviar dados novos, rode `dvc repro` e depois `dvc push`, e commite o `dvc.lock`. A conta precisa ter permissão de escrita no repositório.
+
+### 3. Fluxo de Trabalho
 1. **Exploração**: Comece pelos arquivos em `notebooks/`.
 2. **Processamento**: Use os scripts em `src/data/` para preparar os dados.
 3. **Treinamento**: Execute os scripts em `src/models/` para gerar o modelo final.
