@@ -1,0 +1,31 @@
+schema: '2.0'
+stages:
+  prepare:
+    cmd: python3 src/data/prepare.py
+    deps:
+    - path: data/raw/FakeRecogna.xlsx
+      hash: md5
+      md5: 3eccba31331afba001e2a64b7e4f46c9
+      size: 5455862
+    - path: data/raw/FakeTrueBr_corpus.csv
+      hash: md5
+      md5: bf8286ab76c01761d1283dc2ab3671da
+      size: 7741570
+    - path: data/raw/fakeWhatsApp.BR_2018.csv
+      hash: md5
+      md5: b1a743830a8907e4186defbfe243eb91
+      size: 60570352
+    - path: src/data/prepare.py
+      hash: md5
+      md5: 883482a0554e8f6b6f6b9e85a3133dfa
+      size: 1823
+    params:
+      params.yaml:
+        prepare:
+          min_words: 3
+          seed: 42
+    outs:
+    - path: data/processed/dataset.csv
+      hash: md5
+      md5: 2f14a6709c4ff680edfd659434495938
+      size: 18848061

@@ -1,0 +1,3 @@
+prepare:
+  min_words: 3        # textos com <= min_words palavras sao descartados
+  seed: 42

@@ -1,0 +1,12 @@
+stages:
+  prepare:
+    cmd: python3 src/data/prepare.py
+    deps:
+      - src/data/prepare.py
+      - data/raw/FakeRecogna.xlsx
+      - data/raw/FakeTrueBr_corpus.csv
+      - data/raw/fakeWhatsApp.BR_2018.csv
+    params:
+      - prepare
+    outs:
+      - data/processed/dataset.csv
