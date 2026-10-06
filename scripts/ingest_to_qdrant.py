@@ -41,6 +41,7 @@ from qdrant_client.models import (
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from src.config import COLLECTION_NAME, EMBED_MODEL, EMBEDDING_PROVIDER, QDRANT_PATH, QDRANT_URL
 from src.rag.chunking import Chunk, build_chunks
+from src.rag.corpus_version import corpus_version
 from src.rag.embeddings import EmbeddingProvider, get_embedding_provider
 from src.rag.qdrant import get_qdrant_client
 
@@ -248,12 +249,13 @@ def upsert_in_batches(
     collection: str,
     chunks: list[Chunk],
     embeddings: list[list[float]],
+    corpus_version: str = "unknown",
 ) -> None:
     points = [
         PointStruct(
             id=chunk.chunk_id,
             vector=vec,
-            payload={**chunk.payload(), "embedding_model": MODEL_NAME},
+            payload={**chunk.payload(), "embedding_model": MODEL_NAME, "corpus_version": corpus_version},
         )
         for chunk, vec in zip(chunks, embeddings)
     ]
@@ -318,7 +320,9 @@ def run(args: argparse.Namespace) -> None:
     prepare_collection(client, args.collection, vector_size, recreate=args.recreate)
 
     # 5. Indexa em lotes
-    upsert_in_batches(client, args.collection, chunks, embeddings)
+    version = corpus_version(args.input)
+    log.info("Versão do corpus (hash DVC): %s", version)
+    upsert_in_batches(client, args.collection, chunks, embeddings, version)
 
     # 6. Consulta de teste
     if args.skip_query:
