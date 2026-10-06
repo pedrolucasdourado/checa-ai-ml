@@ -1,0 +1,419 @@
+{
+  "collection": "fact_checks_silver",
+  "eval_file": "data\\eval\\retrieval_eval.jsonl",
+  "top_k": 5,
+  "current_threshold": 0.7,
+  "recommended_threshold": 0.75,
+  "cases": [
+    {
+      "id": "stf_voto_impresso",
+      "expected_status": "matched",
+      "predicted_status": "matched",
+      "best_score": 0.7822294,
+      "rank": 1,
+      "top_url": "https://g1.globo.com/fato-ou-fake/noticia/2020/09/23/e-fake-que-stf-decidiu-que-voto-em-cedula-de-papel-e-inconstitucional.ghtml",
+      "expected_url": "https://g1.globo.com/fato-ou-fake/noticia/2020/09/23/e-fake-que-stf-decidiu-que-voto-em-cedula-de-papel-e-inconstitucional.ghtml"
+    },
+    {
+      "id": "noruega_baleias_petroleo",
+      "expected_status": "matched",
+      "predicted_status": "matched",
+      "best_score": 0.791847,
+      "rank": 1,
+      "top_url": "https://noticias.uol.com.br/confere/ultimas-noticias/2019/08/23/noruega-aumenta-quota-de-caca-as-baleias-e-e-grande-exploradora-de-petroleo.htm",
+      "expected_url": "https://noticias.uol.com.br/confere/ultimas-noticias/2019/08/23/noruega-aumenta-quota-de-caca-as-baleias-e-e-grande-exploradora-de-petroleo.htm"
+    },
+    {
+      "id": "mascaras_covid",
+      "expected_status": "matched",
+      "predicted_status": "matched",
+      "best_score": 0.73835546,
+      "rank": 1,
+      "top_url": "https://noticias.uol.com.br/comprova/ultimas-noticias/2020/07/17/mascaras-auxiliam-no-combate-a-covid-ao-contrario-do-que-diz-influenciador.htm",
+      "expected_url": "https://noticias.uol.com.br/comprova/ultimas-noticias/2020/07/17/mascaras-auxiliam-no-combate-a-covid-ao-contrario-do-que-diz-influenciador.htm"
+    },
+    {
+      "id": "doria_mascara_china",
+      "expected_status": "matched",
+      "predicted_status": "matched",
+      "best_score": 0.814065,
+      "rank": 1,
+      "top_url": "https://noticias.uol.com.br/confere/ultimas-noticias/2020/11/15/doria-nao-foi-votar-com-mascara-estampada-com-bandeira-chinesa.htm",
+      "expected_url": "https://noticias.uol.com.br/confere/ultimas-noticias/2020/11/15/doria-nao-foi-votar-com-mascara-estampada-com-bandeira-chinesa.htm"
+    },
+    {
+      "id": "fragmento_arroz",
+      "expected_status": "matched",
+      "predicted_status": "matched",
+      "best_score": 0.8127816,
+      "rank": 1,
+      "top_url": "https://noticias.uol.com.br/comprova/ultimas-noticias/2021/07/23/fragmento-de-arroz-nao-e-resto-e-venda-e-anterior-ao-governo-bolsonaro.htm",
+      "expected_url": "https://noticias.uol.com.br/comprova/ultimas-noticias/2021/07/23/fragmento-de-arroz-nao-e-resto-e-venda-e-anterior-ao-governo-bolsonaro.htm"
+    },
+    {
+      "id": "vacina_dna",
+      "expected_status": "matched",
+      "predicted_status": "matched",
+      "best_score": 0.7505372,
+      "rank": 1,
+      "top_url": "https://www.boatos.org/saude/vacina-covid-modificar-dna-pessoas-transformar-seres-geneticamente-modificados.html",
+      "expected_url": "https://www.boatos.org/saude/vacina-covid-modificar-dna-pessoas-transformar-seres-geneticamente-modificados.html"
+    },
+    {
+      "id": "urna_video_fraude",
+      "expected_status": "matched",
+      "predicted_status": "matched",
+      "best_score": 0.8259362,
+      "rank": 2,
+      "top_url": "https://www.boatos.org/politica/video-urna-eletronica-fraudada.html",
+      "expected_url": "https://g1.globo.com/fato-ou-fake/noticia/2020/11/18/e-fake-que-video-prove-que-e-possivel-fraudar-urna-eletronica.ghtml"
+    },
+    {
+      "id": "urna_fraude_brasil",
+      "expected_status": "matched",
+      "predicted_status": "matched",
+      "best_score": 0.8092853,
+      "rank": 1,
+      "top_url": "https://noticias.uol.com.br/confere/ultimas-noticias/2021/07/08/eleicoes-brasil-fraude.htm",
+      "expected_url": "https://noticias.uol.com.br/confere/ultimas-noticias/2021/07/08/eleicoes-brasil-fraude.htm"
+    },
+    {
+      "id": "mascaras_oxigenacao",
+      "expected_status": "matched",
+      "predicted_status": "matched",
+      "best_score": 0.7829682,
+      "rank": 1,
+      "top_url": "https://noticias.uol.com.br/confere/ultimas-noticias/2021/06/17/nao-e-verdade-que-mascaras-reduzem-oxigenacao-como-disse-bolsonaro-em-live.htm",
+      "expected_url": "https://noticias.uol.com.br/confere/ultimas-noticias/2021/06/17/nao-e-verdade-que-mascaras-reduzem-oxigenacao-como-disse-bolsonaro-em-live.htm"
+    },
+    {
+      "id": "cloroquina_oms",
+      "expected_status": "matched",
+      "predicted_status": "matched",
+      "best_score": 0.7869804,
+      "rank": 2,
+      "top_url": "https://noticias.uol.com.br/comprova/ultimas-noticias/2020/06/12/oms-nao-se-desculpou-por-reviravoltas-com-hidroxicloroquina.htm",
+      "expected_url": "https://g1.globo.com/fato-ou-fake/coronavirus/noticia/2020/08/31/e-fake-que-oms-pediu-desculpas-por-erro-mudou-posicionamento-e-agora-recomenda-hidroxicloroquina-para-tratar-a-covid-19.ghtml"
+    },
+    {
+      "id": "whatsapp_gold",
+      "expected_status": "matched",
+      "predicted_status": "matched",
+      "best_score": 0.79602087,
+      "rank": 1,
+      "top_url": "https://www.boatos.org/tecnologia/whatsapp-gold-video-gambarelli-sao-virus-bloqueiam-telefone-conta-bancaria.html",
+      "expected_url": "https://www.boatos.org/tecnologia/whatsapp-gold-video-gambarelli-sao-virus-bloqueiam-telefone-conta-bancaria.html"
+    },
+    {
+      "id": "renda_brasil_whatsapp",
+      "expected_status": "matched",
+      "predicted_status": "matched",
+      "best_score": 0.78294516,
+      "rank": 1,
+      "top_url": "https://www.boatos.org/tecnologia/cadastro-renda-brasil-auxilio-gas-mesa-brasil-conta-pra-mim-governo-whatsapp.html",
+      "expected_url": "https://www.boatos.org/tecnologia/cadastro-renda-brasil-auxilio-gas-mesa-brasil-conta-pra-mim-governo-whatsapp.html"
+    },
+    {
+      "id": "jacarezinho_foto",
+      "expected_status": "matched",
+      "predicted_status": "matched",
+      "best_score": 0.7830585,
+      "rank": 1,
+      "top_url": "https://www.boatos.org/brasil/foto-mostra-20-bandidos-mortos-jacarezinho-hora-prisao.html",
+      "expected_url": "https://www.boatos.org/brasil/foto-mostra-20-bandidos-mortos-jacarezinho-hora-prisao.html"
+    },
+    {
+      "id": "barbie_cirurgias",
+      "expected_status": "matched",
+      "predicted_status": "matched",
+      "best_score": 0.8463403,
+      "rank": 1,
+      "top_url": "https://www.boatos.org/mundo/mulher-fez-cirurgias-barbie.html",
+      "expected_url": "https://www.boatos.org/mundo/mulher-fez-cirurgias-barbie.html"
+    },
+    {
+      "id": "amapa_mst",
+      "expected_status": "matched",
+      "predicted_status": "matched",
+      "best_score": 0.74596524,
+      "rank": 2,
+      "top_url": "https://www.e-farsas.com/video-mostra-o-mst-destruindo-torres-de-transmissao-no-amapa-sera-verdade.html",
+      "expected_url": "https://projetocomprova.com.br/publicações/e-falso-que-mst-tenha-destruido-estacao-de-energia-no-amapa/"
+    },
+    {
+      "id": "schwarzenegger_bolsonaro",
+      "expected_status": "matched",
+      "predicted_status": "matched",
+      "best_score": 0.82580304,
+      "rank": 3,
+      "top_url": "https://noticias.uol.com.br/confere/ultimas-noticias/2020/02/29/foto-de-schwarzenegger-com-camiseta-de-bolsonaro-e-montagem.htm",
+      "expected_url": "https://noticias.uol.com.br/comprova/ultimas-noticias/2021/07/08/e-falsa-foto-de-schwarzenegger-com-camiseta-de-apoio-a-bolsonaro.htm"
+    },
+    {
+      "id": "senegal_cloroquina",
+      "expected_status": "matched",
+      "predicted_status": "matched",
+      "best_score": 0.7849014,
+      "rank": 2,
+      "top_url": "https://www.boatos.org/mundo/senegal-cinco-mortes-coronavirus-cloroquina-todos-pacientes.html",
+      "expected_url": "https://g1.globo.com/fato-ou-fake/coronavirus/noticia/2020/08/07/e-fake-que-senegal-usa-cloroquina-desde-o-primeiro-caso-e-tem-apenas-cinco-mortes-por-covid-19.ghtml"
+    },
+    {
+      "id": "irrelevant_weather",
+      "expected_status": "abstained",
+      "predicted_status": "abstained",
+      "best_score": 0.4572572,
+      "rank": null,
+      "top_url": "https://noticias.uol.com.br/confere/ultimas-noticias/2019/10/11/corrente-liga-erroneamente-derramamento-de-oleo-a-video-filmado-na-europa.htm",
+      "expected_url": null
+    },
+    {
+      "id": "irrelevant_recipe",
+      "expected_status": "abstained",
+      "predicted_status": "abstained",
+      "best_score": 0.4093476,
+      "rank": null,
+      "top_url": "https://www.e-farsas.com/bolinhos-feitos-na-turquia-contem-comprimidos-que-causam-paralisia.html",
+      "expected_url": null
+    },
+    {
+      "id": "irrelevant_programming",
+      "expected_status": "abstained",
+      "predicted_status": "abstained",
+      "best_score": 0.23854408,
+      "rank": null,
+      "top_url": "https://checamos.afp.com//os-supostos-crematorios-enviados-paises-durante-pandemia-sao-equipamentos-industriais",
+      "expected_url": null
+    },
+    {
+      "id": "irrelevant_sports",
+      "expected_status": "abstained",
+      "predicted_status": "abstained",
+      "best_score": 0.55673695,
+      "rank": null,
+      "top_url": "https://www.boatos.org/esporte/palmeiras-doar-renda-vitimas-flamengo.html",
+      "expected_url": null
+    },
+    {
+      "id": "whatsapp_external_jb17_formula1",
+      "expected_status": "abstained",
+      "predicted_status": "abstained",
+      "best_score": 0.5172094,
+      "rank": null,
+      "top_url": "https://www.boatos.org/politica/petrobras-cancela-patrocinio-formula-globo-bolsonaro.html",
+      "expected_url": null
+    },
+    {
+      "id": "whatsapp_external_haddad_assessora",
+      "expected_status": "abstained",
+      "predicted_status": "abstained",
+      "best_score": 0.6023175,
+      "rank": null,
+      "top_url": "https://www.e-farsas.com/trecho-de-conversa-vazada-entre-moro-e-dallagnol-prova-que-eles-tramavam-barrar-a-candidatura-de-haddad.html",
+      "expected_url": null
+    },
+    {
+      "id": "whatsapp_external_camisa_bolsonaro_gratis",
+      "expected_status": "abstained",
+      "predicted_status": "abstained",
+      "best_score": 0.64574456,
+      "rank": null,
+      "top_url": "https://www.boatos.org/tecnologia/camisa-lula-presidente-gratis-site.html",
+      "expected_url": null
+    },
+    {
+      "id": "whatsapp_external_propaganda_whatsapp_eleicao",
+      "expected_status": "abstained",
+      "predicted_status": "abstained",
+      "best_score": 0.624519,
+      "rank": null,
+      "top_url": "https://www.e-farsas.com/sera-verdade-que-as-urnas-eletronicas-brasileiras-nao-sao-auditaveis.html",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_000_www_gov_br",
+      "expected_status": "abstained",
+      "predicted_status": "matched",
+      "best_score": 0.7224802,
+      "rank": null,
+      "top_url": "https://projetocomprova.com.br/publicações/publicacao-distorce-informacoes-sobre-protocolos-para-uso-de-medicamentos-contra-a-covid-19/",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_001_www_aosfatos_org",
+      "expected_status": "matched",
+      "predicted_status": "matched",
+      "best_score": 0.8142562,
+      "rank": 1,
+      "top_url": "https://g1.globo.com/fato-ou-fake/coronavirus/noticia/2020/05/21/e-fake-que-pesquisa-com-6-mil-medicos-indique-a-hidroxicloroquina-como-o-tratamento-mais-eficaz-contra-o-coronavirus.ghtml",
+      "expected_url": "https://g1.globo.com/fato-ou-fake/coronavirus/noticia/2020/05/21/e-fake-que-pesquisa-com-6-mil-medicos-indique-a-hidroxicloroquina-como-o-tratamento-mais-eficaz-contra-o-coronavirus.ghtml"
+    },
+    {
+      "id": "external_news_005_sem_fonte",
+      "expected_status": "abstained",
+      "predicted_status": "matched",
+      "best_score": 0.71449816,
+      "rank": null,
+      "top_url": "https://checamos.afp.com//checamos-o-pronunciamento-de-bolsonaro-sobre-acoes-do-governo-contra-covid-19",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_006_sem_fonte",
+      "expected_status": "abstained",
+      "predicted_status": "matched",
+      "best_score": 0.70277655,
+      "rank": null,
+      "top_url": "https://noticias.uol.com.br/comprova/ultimas-noticias/2020/06/16/os-70-dias-do-comprova-na-checagem-de-informacoes-duvidosas-sobre-a-covid.htm",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_010_sem_fonte",
+      "expected_status": "abstained",
+      "predicted_status": "matched",
+      "best_score": 0.70603293,
+      "rank": null,
+      "top_url": "https://projetocomprova.com.br/publicações/sp-recebeu-r-57-bi-do-governo-federal-para-combater-pandemia-e-nao-r-135-bi/",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_017_sem_fonte",
+      "expected_status": "abstained",
+      "predicted_status": "matched",
+      "best_score": 0.73474747,
+      "rank": null,
+      "top_url": "https://g1.globo.com/fato-ou-fake/noticia/2020/04/03/e-fake-que-exercito-brasileiro-abriu-2-mil-leitos-em-48-horas-para-pacientes-com-coronavirus.ghtml",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_021_www_aosfatos_org",
+      "expected_status": "matched",
+      "predicted_status": "matched",
+      "best_score": 0.88926613,
+      "rank": 1,
+      "top_url": "https://www.boatos.org/politica/mandetta-renovou-contratos-publicidade-r-1-bilhao-firmados-dilma.html",
+      "expected_url": "https://www.boatos.org/politica/mandetta-renovou-contratos-publicidade-r-1-bilhao-firmados-dilma.html"
+    },
+    {
+      "id": "external_news_025_sem_fonte",
+      "expected_status": "abstained",
+      "predicted_status": "matched",
+      "best_score": 0.7277279,
+      "rank": null,
+      "top_url": "https://checamos.afp.com//o-chloro-quinino-e-uma-substancia-diferente-da-cloroquina-sintetizada-em-1934",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_036_sem_fonte",
+      "expected_status": "abstained",
+      "predicted_status": "matched",
+      "best_score": 0.72794896,
+      "rank": null,
+      "top_url": "https://projetocomprova.com.br/publicações/e-enganosa-postagem-que-questiona-etica-dos-testes-em-humanos-de-vacinas-para-covid-19/",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_042_sem_fonte",
+      "expected_status": "abstained",
+      "predicted_status": "matched",
+      "best_score": 0.7314043,
+      "rank": null,
+      "top_url": "https://g1.globo.com/fato-ou-fake/noticia/2020/04/03/e-fake-que-exercito-brasileiro-abriu-2-mil-leitos-em-48-horas-para-pacientes-com-coronavirus.ghtml",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_044_sem_fonte",
+      "expected_status": "abstained",
+      "predicted_status": "matched",
+      "best_score": 0.76143765,
+      "rank": null,
+      "top_url": "https://g1.globo.com/fato-ou-fake/noticia/2020/03/27/e-fake-mensagem-que-fala-em-cadastro-para-receber-de-r-600-a-r-1200-de-auxilio-emergencial-por-causa-do-coronavirus.ghtml",
+      "expected_url": null
+    }
+  ],
+  "thresholds": [
+    {
+      "threshold": 0.65,
+      "accuracy": 0.75,
+      "precision": 0.6785714285714286,
+      "recall": 1.0,
+      "f1": 0.8085106382978724,
+      "hit_at_k": 1.0,
+      "mrr": 0.8596491228070174,
+      "tp": 19,
+      "fp": 9,
+      "tn": 8,
+      "fn": 0,
+      "wrong_match": 0
+    },
+    {
+      "threshold": 0.7,
+      "accuracy": 0.75,
+      "precision": 0.6785714285714286,
+      "recall": 1.0,
+      "f1": 0.8085106382978724,
+      "hit_at_k": 1.0,
+      "mrr": 0.8596491228070174,
+      "tp": 19,
+      "fp": 9,
+      "tn": 8,
+      "fn": 0,
+      "wrong_match": 0
+    },
+    {
+      "threshold": 0.72,
+      "accuracy": 0.8333333333333334,
+      "precision": 0.76,
+      "recall": 1.0,
+      "f1": 0.8636363636363636,
+      "hit_at_k": 1.0,
+      "mrr": 0.8596491228070174,
+      "tp": 19,
+      "fp": 6,
+      "tn": 11,
+      "fn": 0,
+      "wrong_match": 0
+    },
+    {
+      "threshold": 0.75,
+      "accuracy": 0.9166666666666666,
+      "precision": 0.9444444444444444,
+      "recall": 0.8947368421052632,
+      "f1": 0.918918918918919,
+      "hit_at_k": 1.0,
+      "mrr": 0.8596491228070174,
+      "tp": 17,
+      "fp": 1,
+      "tn": 16,
+      "fn": 2,
+      "wrong_match": 0
+    },
+    {
+      "threshold": 0.78,
+      "accuracy": 0.9166666666666666,
+      "precision": 1.0,
+      "recall": 0.8421052631578947,
+      "f1": 0.9142857142857143,
+      "hit_at_k": 1.0,
+      "mrr": 0.8596491228070174,
+      "tp": 16,
+      "fp": 0,
+      "tn": 17,
+      "fn": 3,
+      "wrong_match": 0
+    },
+    {
+      "threshold": 0.8,
+      "accuracy": 0.6944444444444444,
+      "precision": 1.0,
+      "recall": 0.42105263157894735,
+      "f1": 0.5925925925925926,
+      "hit_at_k": 1.0,
+      "mrr": 0.8596491228070174,
+      "tp": 8,
+      "fp": 0,
+      "tn": 17,
+      "fn": 11,
+      "wrong_match": 0
+    }
+  ]
+}

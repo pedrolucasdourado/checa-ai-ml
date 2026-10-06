@@ -1,0 +1,19 @@
+{
+  "duplicate_records": 94,
+  "injection_risk": {
+    "low": 5876
+  },
+  "preprocessing_version": "silver-v1",
+  "records": 5876,
+  "topics": {
+    "economia": 138,
+    "golpes_plataformas": 1233,
+    "internacional": 262,
+    "meio_ambiente": 97,
+    "outros": 61,
+    "politica_eleicoes": 1887,
+    "saude_ciencia": 1747,
+    "seguranca_justica": 451
+  },
+  "unique_duplicate_groups": 5782
+}

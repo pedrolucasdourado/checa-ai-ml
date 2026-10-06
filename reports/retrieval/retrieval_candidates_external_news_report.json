@@ -1,0 +1,517 @@
+{
+  "collection": "fact_checks_silver",
+  "eval_file": "data\\eval\\retrieval_candidates_external_news.jsonl",
+  "top_k": 5,
+  "current_threshold": 0.7,
+  "recommended_threshold": 0.8,
+  "cases": [
+    {
+      "id": "external_news_000_www_gov_br",
+      "expected_status": "review",
+      "predicted_status": "matched",
+      "best_score": 0.7224802,
+      "rank": null,
+      "top_url": "https://projetocomprova.com.br/publicações/publicacao-distorce-informacoes-sobre-protocolos-para-uso-de-medicamentos-contra-a-covid-19/",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_001_www_aosfatos_org",
+      "expected_status": "review",
+      "predicted_status": "matched",
+      "best_score": 0.8142562,
+      "rank": null,
+      "top_url": "https://g1.globo.com/fato-ou-fake/coronavirus/noticia/2020/05/21/e-fake-que-pesquisa-com-6-mil-medicos-indique-a-hidroxicloroquina-como-o-tratamento-mais-eficaz-contra-o-coronavirus.ghtml",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_002_portal_mec_gov_br",
+      "expected_status": "review",
+      "predicted_status": "abstained",
+      "best_score": 0.57591707,
+      "rank": null,
+      "top_url": "https://www.boatos.org/saude/unicamp-urgencia-engenheiros-mecanicos-manutencao-respiradores.html",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_003_agenciabrasil_ebc_com_br",
+      "expected_status": "review",
+      "predicted_status": "abstained",
+      "best_score": 0.65391403,
+      "rank": null,
+      "top_url": "https://g1.globo.com/fato-ou-fake/noticia/2020/03/23/e-fake-mensagem-sobre-cadastramento-para-receber-auxilio-cidadao-por-causa-do-coronavirus.ghtml",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_004_sem_fonte",
+      "expected_status": "review",
+      "predicted_status": "abstained",
+      "best_score": 0.51052564,
+      "rank": null,
+      "top_url": "https://www.boatos.org/mundo/presidente-china-xi-jinping-discurso-nova-era-exercito-guerra-inevitavel.html",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_005_sem_fonte",
+      "expected_status": "review",
+      "predicted_status": "matched",
+      "best_score": 0.7145184,
+      "rank": null,
+      "top_url": "https://checamos.afp.com//checamos-o-pronunciamento-de-bolsonaro-sobre-acoes-do-governo-contra-covid-19",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_006_sem_fonte",
+      "expected_status": "review",
+      "predicted_status": "matched",
+      "best_score": 0.70277655,
+      "rank": null,
+      "top_url": "https://noticias.uol.com.br/comprova/ultimas-noticias/2020/06/16/os-70-dias-do-comprova-na-checagem-de-informacoes-duvidosas-sobre-a-covid.htm",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_007_sem_fonte",
+      "expected_status": "review",
+      "predicted_status": "abstained",
+      "best_score": 0.5627391,
+      "rank": null,
+      "top_url": "https://www.e-farsas.com/tecnologia-israelense-para-exames-chegou-ao-brasil-gracas-ao-presidente-jair-bolsonaro.html",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_008_sem_fonte",
+      "expected_status": "review",
+      "predicted_status": "abstained",
+      "best_score": 0.6018758,
+      "rank": null,
+      "top_url": "https://www.boatos.org/tecnologia/tecnologia-5g-ligada-surgimento-coronavirus-china.html",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_009_sem_fonte",
+      "expected_status": "review",
+      "predicted_status": "abstained",
+      "best_score": 0.65872496,
+      "rank": null,
+      "top_url": "https://noticias.uol.com.br/comprova/ultimas-noticias/2020/06/24/e-falso-que-hospitais-recebem-r18-mil-por-cada-obito-registrado-como-covid.htm",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_010_sem_fonte",
+      "expected_status": "review",
+      "predicted_status": "matched",
+      "best_score": 0.70603293,
+      "rank": null,
+      "top_url": "https://projetocomprova.com.br/publicações/sp-recebeu-r-57-bi-do-governo-federal-para-combater-pandemia-e-nao-r-135-bi/",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_011_sem_fonte",
+      "expected_status": "review",
+      "predicted_status": "abstained",
+      "best_score": 0.6068906,
+      "rank": null,
+      "top_url": "https://www.boatos.org/mundo/democratas-fizeram-cedulas-falsas-china-fraudar-eleicoes.html",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_012_sem_fonte",
+      "expected_status": "review",
+      "predicted_status": "abstained",
+      "best_score": 0.5650965,
+      "rank": null,
+      "top_url": "https://www.boatos.org/saude/pf-encontra-dinheiro-escondido-forro-teto-casa-secretario-saude-paraiba-para-video.html",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_013_sem_fonte",
+      "expected_status": "review",
+      "predicted_status": "abstained",
+      "best_score": 0.59731257,
+      "rank": null,
+      "top_url": "https://projetocomprova.com.br/publicações/minirreforma-nao-tiraria-direitos-de-todos-os-trabalhadores-como-da-a-entender-video-no-tiktok/",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_014_sem_fonte",
+      "expected_status": "review",
+      "predicted_status": "abstained",
+      "best_score": 0.5632091,
+      "rank": null,
+      "top_url": "https://g1.globo.com/fato-ou-fake/noticia/2020/04/03/e-fake-que-exercito-brasileiro-abriu-2-mil-leitos-em-48-horas-para-pacientes-com-coronavirus.ghtml",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_015_sem_fonte",
+      "expected_status": "review",
+      "predicted_status": "abstained",
+      "best_score": 0.65642834,
+      "rank": null,
+      "top_url": "https://noticias.uol.com.br/comprova/ultimas-noticias/2020/08/21/post-tira-de-contexto-frase-de-damares-alves-sobre-abuso-infantil.htm",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_016_sem_fonte",
+      "expected_status": "review",
+      "predicted_status": "abstained",
+      "best_score": 0.47026527,
+      "rank": null,
+      "top_url": "https://www.boatos.org/brasil/carta-bombastica-generais-braga-netto-gilberto-pimentel-exarnet.html",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_017_sem_fonte",
+      "expected_status": "review",
+      "predicted_status": "matched",
+      "best_score": 0.73474747,
+      "rank": null,
+      "top_url": "https://g1.globo.com/fato-ou-fake/noticia/2020/04/03/e-fake-que-exercito-brasileiro-abriu-2-mil-leitos-em-48-horas-para-pacientes-com-coronavirus.ghtml",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_018_sem_fonte",
+      "expected_status": "review",
+      "predicted_status": "abstained",
+      "best_score": 0.5875657,
+      "rank": null,
+      "top_url": "https://checamos.afp.com//video-de-bolsonaro-em-aeroporto-foi-gravado-em-2017-no-brasil-nao-no-equador",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_019_sem_fonte",
+      "expected_status": "review",
+      "predicted_status": "abstained",
+      "best_score": 0.55302614,
+      "rank": null,
+      "top_url": "https://projetocomprova.com.br/publicações/texto-que-lista-17-conselhos-para-a-pandemia-mistura-dados-corretos-e-informacoes-falsas-sobre-o-virus/",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_020_sem_fonte",
+      "expected_status": "review",
+      "predicted_status": "abstained",
+      "best_score": 0.66449493,
+      "rank": null,
+      "top_url": "https://g1.globo.com/fato-ou-fake/noticia/2020/04/03/e-fake-que-exercito-brasileiro-abriu-2-mil-leitos-em-48-horas-para-pacientes-com-coronavirus.ghtml",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_021_www_aosfatos_org",
+      "expected_status": "review",
+      "predicted_status": "matched",
+      "best_score": 0.88926613,
+      "rank": null,
+      "top_url": "https://www.boatos.org/politica/mandetta-renovou-contratos-publicidade-r-1-bilhao-firmados-dilma.html",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_022_sem_fonte",
+      "expected_status": "review",
+      "predicted_status": "abstained",
+      "best_score": 0.6347834,
+      "rank": null,
+      "top_url": "https://www.boatos.org/politica/damares-grava-audio-pedindo-povo-portas-dos-quarteis.html",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_023_sem_fonte",
+      "expected_status": "review",
+      "predicted_status": "abstained",
+      "best_score": 0.6543691,
+      "rank": null,
+      "top_url": "https://projetocomprova.com.br/publicações/meme-confunde-ao-destacar-posicao-do-brasil-em-ranking-de-crescimento-economico/",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_024_sem_fonte",
+      "expected_status": "review",
+      "predicted_status": "abstained",
+      "best_score": 0.63807356,
+      "rank": null,
+      "top_url": "https://checamos.afp.com//no-inicio-do-carnaval-de-2020-ainda-nao-havia-casos-registrados-de-covid-19-no-brasil",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_025_sem_fonte",
+      "expected_status": "review",
+      "predicted_status": "matched",
+      "best_score": 0.7276504,
+      "rank": null,
+      "top_url": "https://checamos.afp.com//o-chloro-quinino-e-uma-substancia-diferente-da-cloroquina-sintetizada-em-1934",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_026_sem_fonte",
+      "expected_status": "review",
+      "predicted_status": "abstained",
+      "best_score": 0.66939783,
+      "rank": null,
+      "top_url": "https://www.boatos.org/saude/dr-patrick-martin-dra-lidia-rota-vender-dicas-novo-coronavirus.html",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_027_sem_fonte",
+      "expected_status": "review",
+      "predicted_status": "abstained",
+      "best_score": 0.6672603,
+      "rank": null,
+      "top_url": "https://g1.globo.com/fato-ou-fake/coronavirus/noticia/2020/06/05/e-fake-que-primeira-dama-do-espirito-santo-se-curou-da-covid-19-com-protocolo-de-cloroquina.ghtml",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_028_sem_fonte",
+      "expected_status": "review",
+      "predicted_status": "abstained",
+      "best_score": 0.6136734,
+      "rank": null,
+      "top_url": "https://www.boatos.org/politica/toffoli-maia-alcolumbre-quarentena-pacto-derrubar-bolsonaro.html",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_029_sem_fonte",
+      "expected_status": "review",
+      "predicted_status": "abstained",
+      "best_score": 0.5516782,
+      "rank": null,
+      "top_url": "https://projetocomprova.com.br/publicações/ministerio-da-defesa-desmente-boato-de-que-exercito-tenha-construido-2-mil-leitos-em-48-horas/",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_030_sem_fonte",
+      "expected_status": "review",
+      "predicted_status": "abstained",
+      "best_score": 0.51614726,
+      "rank": null,
+      "top_url": "https://www.boatos.org/esporte/maguila-abandonado-familia-asilo.html",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_031_sem_fonte",
+      "expected_status": "review",
+      "predicted_status": "abstained",
+      "best_score": 0.6608603,
+      "rank": null,
+      "top_url": "https://noticias.uol.com.br/comprova/ultimas-noticias/2021/07/06/sp-recebeu-r-57-bi-da-uniao-para-combater-pandemia-e-nao-r-135-bi.htm",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_032_sem_fonte",
+      "expected_status": "review",
+      "predicted_status": "abstained",
+      "best_score": 0.64568615,
+      "rank": null,
+      "top_url": "https://noticias.uol.com.br/comprova/ultimas-noticias/2020/08/05/medico-usa-dados-enganosos-ao-sugerir-conspiracao-sobre-covid-19.htm",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_033_sem_fonte",
+      "expected_status": "review",
+      "predicted_status": "abstained",
+      "best_score": 0.6740935,
+      "rank": null,
+      "top_url": "https://www.e-farsas.com/fotos-mostram-o-comportamento-da-populacao-durante-pandemias-anteriores.html",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_034_sem_fonte",
+      "expected_status": "review",
+      "predicted_status": "abstained",
+      "best_score": 0.650526,
+      "rank": null,
+      "top_url": "https://g1.globo.com/fato-ou-fake/noticia/2020/04/03/e-fake-que-exercito-brasileiro-abriu-2-mil-leitos-em-48-horas-para-pacientes-com-coronavirus.ghtml",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_035_sem_fonte",
+      "expected_status": "review",
+      "predicted_status": "abstained",
+      "best_score": 0.6469023,
+      "rank": null,
+      "top_url": "https://www.boatos.org/saude/oms-muda-discurso-admite-isolamento-horizontal-aumenta-contaminacao-covid-19.html",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_036_sem_fonte",
+      "expected_status": "review",
+      "predicted_status": "matched",
+      "best_score": 0.72794896,
+      "rank": null,
+      "top_url": "https://projetocomprova.com.br/publicações/e-enganosa-postagem-que-questiona-etica-dos-testes-em-humanos-de-vacinas-para-covid-19/",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_037_sem_fonte",
+      "expected_status": "review",
+      "predicted_status": "abstained",
+      "best_score": 0.5919273,
+      "rank": null,
+      "top_url": "https://g1.globo.com/fato-ou-fake/coronavirus/noticia/2020/04/21/e-fake-que-video-mostre-militares-correndo-na-praia-para-desafiar-isolamento-imposto-no-rj.ghtml",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_038_sem_fonte",
+      "expected_status": "review",
+      "predicted_status": "abstained",
+      "best_score": 0.5774013,
+      "rank": null,
+      "top_url": "https://g1.globo.com/fato-ou-fake/coronavirus/noticia/2020/09/15/e-fake-que-nenhum-morador-de-rua-morreu-de-covid-19.ghtml",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_039_sem_fonte",
+      "expected_status": "review",
+      "predicted_status": "abstained",
+      "best_score": 0.6048976,
+      "rank": null,
+      "top_url": "https://www.boatos.org/politica/camara-aprovar-legalizacao-aborto-22-semanas-pandemia.html",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_040_sem_fonte",
+      "expected_status": "review",
+      "predicted_status": "abstained",
+      "best_score": 0.52662945,
+      "rank": null,
+      "top_url": "https://www.boatos.org/ciencia/ceu-marte-som-planeta-vermelho-sao-mostrados-videos-perseverance.html",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_041_sem_fonte",
+      "expected_status": "review",
+      "predicted_status": "abstained",
+      "best_score": 0.6907975,
+      "rank": null,
+      "top_url": "https://g1.globo.com/fato-ou-fake/noticia/2020/04/03/e-fake-que-exercito-brasileiro-abriu-2-mil-leitos-em-48-horas-para-pacientes-com-coronavirus.ghtml",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_042_sem_fonte",
+      "expected_status": "review",
+      "predicted_status": "matched",
+      "best_score": 0.7314043,
+      "rank": null,
+      "top_url": "https://g1.globo.com/fato-ou-fake/noticia/2020/04/03/e-fake-que-exercito-brasileiro-abriu-2-mil-leitos-em-48-horas-para-pacientes-com-coronavirus.ghtml",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_043_sem_fonte",
+      "expected_status": "review",
+      "predicted_status": "abstained",
+      "best_score": 0.5735373,
+      "rank": null,
+      "top_url": "https://noticias.uol.com.br/comprova/ultimas-noticias/2019/11/06/pagina-usa-texto-de-janeiro-para-louvar-feitos-do-governo-bolsonaro.htm",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_044_sem_fonte",
+      "expected_status": "review",
+      "predicted_status": "matched",
+      "best_score": 0.7615774,
+      "rank": null,
+      "top_url": "https://g1.globo.com/fato-ou-fake/noticia/2020/03/27/e-fake-mensagem-que-fala-em-cadastro-para-receber-de-r-600-a-r-1200-de-auxilio-emergencial-por-causa-do-coronavirus.ghtml",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_045_sem_fonte",
+      "expected_status": "review",
+      "predicted_status": "abstained",
+      "best_score": 0.64141303,
+      "rank": null,
+      "top_url": "https://www.boatos.org/religiao/pastor-gerson-de-macedo-fez-profecia-em-audio-antes-de-morrer.html",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_046_sem_fonte",
+      "expected_status": "review",
+      "predicted_status": "abstained",
+      "best_score": 0.6164663,
+      "rank": null,
+      "top_url": "https://projetocomprova.com.br/publicações/medico-e-empresarios-enganam-ao-desqualificar-medidas-protetivas-e-culpar-china-pela-pandemia/",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_047_sem_fonte",
+      "expected_status": "review",
+      "predicted_status": "abstained",
+      "best_score": 0.64307225,
+      "rank": null,
+      "top_url": "https://projetocomprova.com.br/publicações/medico-confunde-ao-indicar-cloroquina-e-criticar-isolamento-social-e-o-uso-de-respiradores/",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_048_sem_fonte",
+      "expected_status": "review",
+      "predicted_status": "abstained",
+      "best_score": 0.6209755,
+      "rank": null,
+      "top_url": "https://www.boatos.org/saude/alexandre-garcia-texto-coronavirus-quarentena-bolsonaro-sociedade-escolheu-sacrificar-almas.html",
+      "expected_url": null
+    },
+    {
+      "id": "external_news_049_sem_fonte",
+      "expected_status": "review",
+      "predicted_status": "abstained",
+      "best_score": 0.69104755,
+      "rank": null,
+      "top_url": "https://noticias.uol.com.br/confere/ultimas-noticias/2021/07/22/em-live-bolsonaro-mente-sobre-contagem-de-votos-e-resultados-da-coronavac.htm",
+      "expected_url": null
+    }
+  ],
+  "thresholds": [
+    {
+      "threshold": 0.65,
+      "accuracy": 0.54,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "hit_at_k": 0.0,
+      "mrr": 0.0,
+      "tp": 0,
+      "fp": 23,
+      "tn": 27,
+      "fn": 0,
+      "wrong_match": 0
+    },
+    {
+      "threshold": 0.7,
+      "accuracy": 0.78,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "hit_at_k": 0.0,
+      "mrr": 0.0,
+      "tp": 0,
+      "fp": 11,
+      "tn": 39,
+      "fn": 0,
+      "wrong_match": 0
+    },
+    {
+      "threshold": 0.75,
+      "accuracy": 0.94,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "hit_at_k": 0.0,
+      "mrr": 0.0,
+      "tp": 0,
+      "fp": 3,
+      "tn": 47,
+      "fn": 0,
+      "wrong_match": 0
+    },
+    {
+      "threshold": 0.8,
+      "accuracy": 0.96,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "hit_at_k": 0.0,
+      "mrr": 0.0,
+      "tp": 0,
+      "fp": 2,
+      "tn": 48,
+      "fn": 0,
+      "wrong_match": 0
+    }
+  ]
+}

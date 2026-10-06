@@ -360,6 +360,23 @@ body {
 
 .evidence-meta span { display: flex; align-items: center; gap: 5px; }
 
+.cluster-chip {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 3px 8px;
+  background: rgba(255,255,255,0.04);
+  color: var(--text-secondary);
+  font-size: 0.74rem;
+}
+.cluster-chip.approved {
+  border-color: rgba(34,211,165,0.35);
+  color: var(--accent-green);
+}
+.cluster-chip.pending {
+  border-color: rgba(245,158,11,0.35);
+  color: #d97706;
+}
+
 .source-link {
   display: inline-flex;
   align-items: center;

@@ -79,10 +79,25 @@ class EvidenceOut(BaseModel):
     data_publicacao: str | None
 
 
+class SourceOut(BaseModel):
+    title: str
+    domain: str
+    url: str
+    published_at: str | None
+    score: float
+    rerank_score: float | None = None
+    cluster_id: int | None = None
+    cluster_label: str = ""
+    cluster_type: str = ""
+    cluster_confidence: str = ""
+    cluster_review_status: str = ""
+
+
 class DebunkResponse(BaseModel):
     status: str           # "matched" | "abstained"
     score: float
     evidence: EvidenceOut | None
+    sources: list[SourceOut] = []
     counter_narrative: str
 
 
@@ -134,6 +149,7 @@ async def api_debunk(body: DebunkRequest):
         status=result["status"],
         score=result["score"],
         evidence=evidence_out,
+        sources=[SourceOut(**s) for s in result.get("sources", [])],
         counter_narrative=result["counter_narrative"],
     )
 

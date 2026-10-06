@@ -19,7 +19,8 @@ import json
 import logging
 import random
 import time
-from datetime import datetime
+from collections import Counter
+from datetime import UTC, datetime
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -44,18 +45,58 @@ PRIORITY_DOMAINS = [
 REQUEST_TIMEOUT = 15          # segundos por requisição
 SLEEP_MIN = 1.0               # pausa mínima entre requisições (segundos)
 SLEEP_MAX = 2.5               # pausa máxima (respeita robots.txt e rate-limit)
-MAX_RETRIES = 2               # tentativas em caso de erro transitório
+MAX_RETRIES = 3               # tentativas em caso de erro transitório
 
-# Headers realistas para evitar bloqueio 403
-HEADERS = {
-    "User-Agent": (
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/124.0.0.0 Safari/537.36"
-    ),
+# Headers realistas para evitar bloqueios simples de 403. UOL tende a
+# rejeitar clients muito "requests puro", então tentamos alguns perfis.
+BASE_HEADERS = {
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
     "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Cache-Control": "no-cache",
+    "Connection": "keep-alive",
+    "DNT": "1",
+    "Pragma": "no-cache",
+    "Upgrade-Insecure-Requests": "1",
 }
+
+BROWSER_PROFILES = [
+    {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/129.0.0.0 Safari/537.36"
+        ),
+        "Sec-CH-UA": '"Google Chrome";v="129", "Chromium";v="129", "Not=A?Brand";v="24"',
+        "Sec-CH-UA-Mobile": "?0",
+        "Sec-CH-UA-Platform": '"Windows"',
+        "Sec-Fetch-Dest": "document",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "none",
+        "Sec-Fetch-User": "?1",
+    },
+    {
+        "User-Agent": (
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+            "AppleWebKit/605.1.15 (KHTML, like Gecko) "
+            "Version/17.6 Safari/605.1.15"
+        ),
+        "Referer": "https://www.google.com/",
+        "Sec-Fetch-Dest": "document",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "cross-site",
+    },
+    {
+        "User-Agent": (
+            "Mozilla/5.0 (X11; Linux x86_64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/129.0.0.0 Safari/537.36"
+        ),
+        "Referer": "https://noticias.uol.com.br/",
+        "Sec-Fetch-Dest": "document",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "same-origin",
+    },
+]
 
 logging.basicConfig(
     level=logging.INFO,
@@ -73,25 +114,64 @@ def extract_domain(url: str) -> str:
         return ""
 
 
-def fetch_html(url: str, session: requests.Session) -> str | None:
-    """Baixa o HTML da URL com retries e timeout."""
+def utc_now_iso() -> str:
+    return datetime.now(UTC).isoformat().replace("+00:00", "Z")
+
+
+def build_headers(url: str, attempt: int) -> dict[str, str]:
+    """Monta headers de navegador variando perfil e referer por tentativa."""
+    parsed = urlparse(url)
+    domain = parsed.netloc.replace("www.", "")
+    profile = BROWSER_PROFILES[(attempt - 1) % len(BROWSER_PROFILES)]
+    headers = {**BASE_HEADERS, **profile}
+
+    if domain == "noticias.uol.com.br":
+        headers.setdefault("Referer", "https://www.google.com/")
+        headers["Origin"] = "https://noticias.uol.com.br"
+
+    return headers
+
+
+def make_session() -> requests.Session:
+    """Cria sessão HTTP; usa cloudscraper se estiver disponível."""
+    try:
+        import cloudscraper  # type: ignore
+
+        log.info("cloudscraper disponível — usando sessão compatível com Cloudflare")
+        return cloudscraper.create_scraper(
+            browser={"browser": "chrome", "platform": "windows", "desktop": True}
+        )
+    except ImportError:
+        return requests.Session()
+
+
+def fetch_html(url: str, session: requests.Session) -> tuple[str | None, int | None, str | None]:
+    """Baixa o HTML da URL com retries, timeout e headers browser-like."""
+    last_status = None
+    last_error = None
+
     for attempt in range(1, MAX_RETRIES + 1):
         try:
-            resp = session.get(url, headers=HEADERS, timeout=REQUEST_TIMEOUT)
+            resp = session.get(url, headers=build_headers(url, attempt), timeout=REQUEST_TIMEOUT)
+            last_status = resp.status_code
             resp.raise_for_status()
-            return resp.text
+            return resp.text, resp.status_code, None
         except requests.exceptions.HTTPError as e:
-            log.warning("HTTP %s → %s (tentativa %d/%d)", e.response.status_code, url, attempt, MAX_RETRIES)
-            if e.response.status_code in (403, 410, 404):
-                return None          # sem retry para erros permanentes
+            last_status = e.response.status_code if e.response is not None else None
+            last_error = f"http_{last_status}"
+            log.warning("HTTP %s -> %s (tentativa %d/%d)", last_status, url, attempt, MAX_RETRIES)
+            if last_status in (410, 404):
+                return None, last_status, last_error
         except requests.exceptions.Timeout:
-            log.warning("Timeout → %s (tentativa %d/%d)", url, attempt, MAX_RETRIES)
+            last_error = "timeout"
+            log.warning("Timeout -> %s (tentativa %d/%d)", url, attempt, MAX_RETRIES)
         except requests.exceptions.RequestException as e:
-            log.warning("Erro de rede → %s | %s (tentativa %d/%d)", url, e, attempt, MAX_RETRIES)
+            last_error = type(e).__name__
+            log.warning("Erro de rede -> %s | %s (tentativa %d/%d)", url, e, attempt, MAX_RETRIES)
 
         if attempt < MAX_RETRIES:
             time.sleep(SLEEP_MIN * attempt)
-    return None
+    return None, last_status, last_error
 
 
 def extract_article(html: str, url: str) -> dict | None:
@@ -145,7 +225,7 @@ def extract_article(html: str, url: str) -> dict | None:
         "url": url,
         "dominio": extract_domain(url),
         "data_publicacao": pub_date,
-        "scraped_at": datetime.utcnow().isoformat() + "Z",
+        "scraped_at": utc_now_iso(),
         "palavras": len(body.split()),
     }
 
@@ -162,86 +242,176 @@ def _extract_title_from_html(html: str) -> str | None:
 
 
 # ─────────────────────────── Pipeline principal ───────────────────────────
-def load_priority_urls(batch: int) -> list[dict]:
-    """Carrega e prioriza URLs de Classe == 0 para as agências selecionadas."""
+def row_to_item(row) -> dict:
+    return {
+        "url": str(row["URL"]),
+        "dominio": row["dominio"],
+        "titulo_original": str(row.get("Titulo", "")),
+        "classe": int(row["Classe"]),
+    }
+
+
+def load_dataset_urls(
+    batch: int | None,
+    domains: list[str] | None = None,
+    shuffle: bool = True,
+) -> list[dict]:
+    """Carrega URLs de Classe == 0, opcionalmente filtradas por domínio."""
     df = pd.read_excel(EXCEL_PATH)
     fake_df = df[df["Classe"] == 0].copy()
     fake_df["dominio"] = fake_df["URL"].apply(extract_domain)
 
-    priority_df = fake_df[fake_df["dominio"].isin(PRIORITY_DOMAINS)].copy()
+    selected_df = fake_df[fake_df["dominio"].isin(domains)].copy() if domains else fake_df
 
-    # Embaralha para variar as amostras entre agências
-    priority_df = priority_df.sample(frac=1, random_state=42).reset_index(drop=True)
+    if shuffle:
+        # Embaralha para variar as amostras entre agências.
+        selected_df = selected_df.sample(frac=1, random_state=42).reset_index(drop=True)
 
-    urls = []
-    for _, row in priority_df.head(batch).iterrows():
-        urls.append({
-            "url": str(row["URL"]),
-            "dominio": row["dominio"],
-            "titulo_original": str(row.get("Titulo", "")),
-            "classe": int(row["Classe"]),
-        })
+    limited_df = selected_df.head(batch) if batch else selected_df
+    urls = [row_to_item(row) for _, row in limited_df.iterrows()]
 
-    log.info("URLs carregadas: %d (de %d disponíveis)", len(urls), len(priority_df))
-    _counts = priority_df.head(batch)["dominio"].value_counts().to_dict()
-    log.info("Distribuição por agência: %s", _counts)
+    log.info("URLs carregadas: %d (de %d disponíveis)", len(urls), len(selected_df))
+    _counts = limited_df["dominio"].value_counts().to_dict()
+    log.info("Distribuição por domínio: %s", _counts)
     return urls
 
 
-def run(batch: int, output: Path, errors_output: Path) -> None:
-    urls = load_priority_urls(batch)
+def load_priority_urls(batch: int | None) -> list[dict]:
+    """Carrega URLs de Classe == 0 para as agências prioritárias."""
+    return load_dataset_urls(batch=batch, domains=PRIORITY_DOMAINS)
+
+
+def load_urls_from_errors(path: Path, batch: int | None = None) -> list[dict]:
+    """Carrega URLs de um JSONL de erros para retentativa."""
+    urls = []
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            item = json.loads(line)
+            urls.append({
+                "url": item["url"],
+                "dominio": item.get("dominio") or extract_domain(item["url"]),
+                "titulo_original": item.get("titulo_original", ""),
+                "classe": int(item.get("classe", 0)),
+            })
+
+    if batch:
+        urls = urls[:batch]
+
+    log.info("URLs carregadas de erros: %d", len(urls))
+    return urls
+
+
+def load_existing_urls(path: Path) -> set[str]:
+    """Lê URLs já salvas para evitar duplicação em modo append."""
+    if not path.exists():
+        return set()
+
+    urls = set()
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            try:
+                rec = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if rec.get("url"):
+                urls.add(rec["url"])
+    return urls
+
+
+def run(
+    batch: int | None,
+    output: Path,
+    errors_output: Path,
+    from_errors: Path | None = None,
+    append: bool = False,
+    all_domains: bool = False,
+    domains: list[str] | None = None,
+    sleep_min: float = SLEEP_MIN,
+    sleep_max: float = SLEEP_MAX,
+) -> None:
+    if from_errors:
+        urls = load_urls_from_errors(from_errors, batch=batch)
+    elif all_domains:
+        urls = load_dataset_urls(batch=batch, domains=domains)
+    else:
+        urls = load_dataset_urls(batch=batch, domains=domains or PRIORITY_DOMAINS)
+
+    if append:
+        existing_urls = load_existing_urls(output)
+        before = len(urls)
+        urls = [item for item in urls if item["url"] not in existing_urls]
+        log.info("Modo append: %d URLs ja presentes ignoradas", before - len(urls))
 
     output.parent.mkdir(parents=True, exist_ok=True)
 
     success, failed = 0, 0
-    session = requests.Session()
+    session = make_session()
+    output_mode = "a" if append else "w"
+    success_by_domain: Counter[str] = Counter()
+    failed_by_domain: Counter[str] = Counter()
+    last_success: dict | None = None
 
-    with open(output, "w", encoding="utf-8") as f_out, \
+    with open(output, output_mode, encoding="utf-8") as f_out, \
          open(errors_output, "w", encoding="utf-8") as f_err:
 
         for item in tqdm(urls, desc="Scraping", unit="url", colour="cyan"):
             url = item["url"]
             log.debug("Processando → %s", url)
 
-            html = fetch_html(url, session)
+            html, http_status, fetch_error = fetch_html(url, session)
 
             if html is None:
                 failed += 1
-                error_record = {**item, "erro": "fetch_failed", "scraped_at": datetime.utcnow().isoformat() + "Z"}
+                failed_by_domain[item["dominio"]] += 1
+                error_record = {
+                    **item,
+                    "erro": "fetch_failed",
+                    "http_status": http_status,
+                    "fetch_error": fetch_error,
+                    "scraped_at": utc_now_iso(),
+                }
                 f_err.write(json.dumps(error_record, ensure_ascii=False) + "\n")
-                time.sleep(SLEEP_MIN)
+                time.sleep(sleep_min)
                 continue
 
             article = extract_article(html, url)
 
             if article is None:
                 failed += 1
-                error_record = {**item, "erro": "extraction_failed", "scraped_at": datetime.utcnow().isoformat() + "Z"}
+                failed_by_domain[item["dominio"]] += 1
+                error_record = {**item, "erro": "extraction_failed", "scraped_at": utc_now_iso()}
                 f_err.write(json.dumps(error_record, ensure_ascii=False) + "\n")
             else:
                 # Enriquece com metadados originais da planilha
                 article["titulo_original_planilha"] = item["titulo_original"]
                 f_out.write(json.dumps(article, ensure_ascii=False) + "\n")
                 success += 1
+                success_by_domain[item["dominio"]] += 1
+                last_success = article
 
             # Pausa respeitosa entre requests
-            time.sleep(random.uniform(SLEEP_MIN, SLEEP_MAX))
+            time.sleep(random.uniform(sleep_min, sleep_max))
 
     # ── Resumo final ─────────────────────────────────────────────────
     total = success + failed
-    log.info("─" * 60)
+    log.info("-" * 60)
     log.info("Concluído! Processadas: %d URLs", total)
-    log.info("  ✅ Sucesso:  %d (%.1f%%)", success, success / total * 100 if total else 0)
-    log.info("  ❌ Falhas:   %d (%.1f%%)", failed, failed / total * 100 if total else 0)
-    log.info("  📄 Saída:   %s", output)
+    log.info("  Sucesso:  %d (%.1f%%)", success, success / total * 100 if total else 0)
+    log.info("  Falhas:   %d (%.1f%%)", failed, failed / total * 100 if total else 0)
+    log.info("  Saida:    %s", output)
+    log.info("  Sucesso por domínio: %s", dict(success_by_domain))
+    if failed_by_domain:
+        log.info("  Falhas por domínio: %s", dict(failed_by_domain))
 
     # ── Exibe 1 exemplo completo extraído ────────────────────────────
-    if success > 0:
-        with open(output, encoding="utf-8") as f:
-            first = json.loads(f.readline())
-        print("\n" + "═" * 70)
-        print("EXEMPLO EXTRAÍDO — PROVA DE CONCEITO")
-        print("═" * 70)
+    if last_success:
+        first = last_success
+        print("\n" + "=" * 70)
+        print("EXEMPLO EXTRAIDO - PROVA DE CONCEITO")
+        print("=" * 70)
         print(f"Domínio:     {first['dominio']}")
         print(f"URL:         {first['url']}")
         print(f"Data:        {first['data_publicacao']}")
@@ -252,19 +422,35 @@ def run(batch: int, output: Path, errors_output: Path) -> None:
         preview = " ".join(words[:800])
         print(preview)
         if len(words) > 800:
-            print(f"\n[... +{len(words) - 800} palavras omitidas na visualização ...]")
-        print("═" * 70)
+            print(f"\n[... +{len(words) - 800} palavras omitidas na visualizacao ...]")
+        print("=" * 70)
 
 
 # ─────────────────────────── Entry point ───────────────────────────
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Scraper de fact-checks do FakeRecogna")
-    parser.add_argument("--batch", type=int, default=50, help="Número de URLs a processar (padrão: 50)")
+    parser.add_argument("--batch", type=int, default=50, help="Número de URLs a processar (padrão: 50). Use 0 com --all para todas.")
     parser.add_argument("--output", type=Path, default=OUTPUT_JSONL, help="Caminho do arquivo JSONL de saída")
+    parser.add_argument("--from-errors", type=Path, help="JSONL de erros para retentativa")
+    parser.add_argument("--append", action="store_true", help="Anexa ao arquivo de saída sem duplicar URLs")
+    parser.add_argument("--all", action="store_true", help="Processa todos os domínios de Classe == 0")
+    parser.add_argument("--sleep-min", type=float, default=SLEEP_MIN, help="Pausa mínima entre requests")
+    parser.add_argument("--sleep-max", type=float, default=SLEEP_MAX, help="Pausa máxima entre requests")
+    parser.add_argument(
+        "--domains",
+        nargs="+",
+        help="Filtra domínios específicos, ex: --domains boatos.org e-farsas.com",
+    )
     args = parser.parse_args()
 
     run(
-        batch=args.batch,
+        batch=args.batch or None,
         output=args.output,
         errors_output=args.output.parent / "fact_checks_errors.jsonl",
+        from_errors=args.from_errors,
+        append=args.append,
+        all_domains=args.all,
+        domains=args.domains,
+        sleep_min=args.sleep_min,
+        sleep_max=args.sleep_max,
     )

@@ -1,0 +1,1555 @@
+{
+  "metadata": {
+    "collection": "fact_checks_silver",
+    "documents": 1550,
+    "clusters": 8,
+    "requested_clusters": 8,
+    "pca_explained_variance_pct": 10.0001
+  },
+  "clusters": [
+    {
+      "cluster_id": 0,
+      "document_count": 152,
+      "top_topics": [
+        [
+          "saude_ciencia",
+          138
+        ],
+        [
+          "politica_eleicoes",
+          11
+        ],
+        [
+          "golpes_plataformas",
+          2
+        ],
+        [
+          "internacional",
+          1
+        ]
+      ],
+      "top_domains": [
+        [
+          "boatos.org",
+          42
+        ],
+        [
+          "projetocomprova.com.br",
+          41
+        ],
+        [
+          "checamos.afp.com",
+          26
+        ],
+        [
+          "noticias.uol.com.br",
+          21
+        ],
+        [
+          "e-farsas.com",
+          12
+        ],
+        [
+          "g1.globo.com",
+          10
+        ]
+      ],
+      "top_keywords": [
+        [
+          "vacina",
+          181
+        ],
+        [
+          "covid",
+          177
+        ],
+        [
+          "coronavirus",
+          148
+        ],
+        [
+          "virus",
+          127
+        ],
+        [
+          "doenca",
+          126
+        ],
+        [
+          "imunizacao",
+          80
+        ],
+        [
+          "medico",
+          79
+        ],
+        [
+          "anvisa",
+          77
+        ],
+        [
+          "hospital",
+          49
+        ],
+        [
+          "tratamento",
+          37
+        ]
+      ],
+      "top_title_terms": [
+        [
+          "vacina",
+          76
+        ],
+        [
+          "não",
+          61
+        ],
+        [
+          "covid",
+          58
+        ],
+        [
+          "contra",
+          52
+        ],
+        [
+          "boato",
+          43
+        ],
+        [
+          "projeto",
+          41
+        ],
+        [
+          "comprova",
+          41
+        ],
+        [
+          "vacinas",
+          25
+        ],
+        [
+          "coronavac",
+          15
+        ],
+        [
+          "brasil",
+          12
+        ],
+        [
+          "vacinação",
+          12
+        ],
+        [
+          "tomar",
+          12
+        ]
+      ],
+      "examples": [
+        {
+          "title": "Ministra da Saúde de Ontário fingiu ter tomado uma vacina contra a gripe?",
+          "url": "https://www.e-farsas.com/ministra-da-saude-de-ontario-fingiu-ter-tomado-uma-vacina-contra-a-gripe.html",
+          "topic": "saude_ciencia",
+          "domain": "e-farsas.com"
+        },
+        {
+          "title": "Peru suspendeu testes com a Coronavac após vacina causar paralisia nas pernas de voluntários #boato",
+          "url": "https://www.boatos.org/saude/peru-suspende-testes-coronavac-apos-vacina-causar-paralisia-pernas.html",
+          "topic": "saude_ciencia",
+          "domain": "boatos.org"
+        },
+        {
+          "title": "O banco de dados dos EUA não registra necessariamente mortes por vacinas anticovid",
+          "url": "https://checamos.afp.com//o-banco-de-dados-dos-eua-nao-registra-necessariamente-mortes-por-vacinas-anticovid",
+          "topic": "saude_ciencia",
+          "domain": "checamos.afp.com"
+        },
+        {
+          "title": "Post engana ao dizer que Brasil vacinou 11% da população antes da Alemanha",
+          "url": "https://noticias.uol.com.br/comprova/ultimas-noticias/2021/06/11/post-engana-ao-dizer-que-brasil-vacinou-11-da-populacao-antes-da-alemanha.htm",
+          "topic": "saude_ciencia",
+          "domain": "noticias.uol.com.br"
+        },
+        {
+          "title": "É #FAKE que Doria disse que não vai permitir que os que não tomarem a CoronaVac passem a doença para os que tomarem | G1",
+          "url": "https://g1.globo.com/fato-ou-fake/coronavirus/noticia/2020/10/20/e-fake-que-doria-disse-que-nao-vai-permitir-que-os-que-nao-tomarem-a-coronavac-passem-a-doenca-para-os-que-tomarem.ghtml",
+          "topic": "saude_ciencia",
+          "domain": "g1.globo.com"
+        },
+        {
+          "title": "O laboratório de Wuhan pertence ao governo chinês e a Glaxo não é proprietária da Pfizer",
+          "url": "https://checamos.afp.com//o-laboratorio-de-wuhan-pertence-ao-governo-chines-e-glaxo-nao-e-proprietaria-da-pfizer",
+          "topic": "internacional",
+          "domain": "checamos.afp.com"
+        },
+        {
+          "title": "Vacinas são eficazes contra variante delta, ao contrário do que diz médico : Projeto Comprova",
+          "url": "https://projetocomprova.com.br/publicações/vacinas-sao-eficazes-contra-variante-delta-ao-contrario-do-que-diz-medico/",
+          "topic": "saude_ciencia",
+          "domain": "projetocomprova.com.br"
+        },
+        {
+          "title": "É #FAKE que vídeo mostre reportagem sobre idosa morta após vacina contra a Covid-19 | G1",
+          "url": "https://g1.globo.com/fato-ou-fake/coronavirus/noticia/2021/02/05/e-fake-que-video-mostre-reportagem-sobre-idosa-morta-apos-vacina-contra-a-covid-19.ghtml",
+          "topic": "saude_ciencia",
+          "domain": "g1.globo.com"
+        }
+      ]
+    },
+    {
+      "cluster_id": 1,
+      "document_count": 181,
+      "top_topics": [
+        [
+          "politica_eleicoes",
+          93
+        ],
+        [
+          "seguranca_justica",
+          22
+        ],
+        [
+          "golpes_plataformas",
+          20
+        ],
+        [
+          "economia",
+          20
+        ],
+        [
+          "saude_ciencia",
+          17
+        ],
+        [
+          "meio_ambiente",
+          6
+        ]
+      ],
+      "top_domains": [
+        [
+          "noticias.uol.com.br",
+          58
+        ],
+        [
+          "boatos.org",
+          38
+        ],
+        [
+          "projetocomprova.com.br",
+          36
+        ],
+        [
+          "g1.globo.com",
+          29
+        ],
+        [
+          "e-farsas.com",
+          13
+        ],
+        [
+          "checamos.afp.com",
+          7
+        ]
+      ],
+      "top_keywords": [
+        [
+          "governo",
+          138
+        ],
+        [
+          "presidente",
+          136
+        ],
+        [
+          "bolsonaro",
+          125
+        ],
+        [
+          "eleicoes",
+          74
+        ],
+        [
+          "ministro",
+          60
+        ],
+        [
+          "deputado",
+          52
+        ],
+        [
+          "lula",
+          44
+        ],
+        [
+          "voto",
+          32
+        ],
+        [
+          "eleicao",
+          29
+        ],
+        [
+          "lei",
+          27
+        ]
+      ],
+      "top_title_terms": [
+        [
+          "boato",
+          40
+        ],
+        [
+          "projeto",
+          38
+        ],
+        [
+          "comprova",
+          36
+        ],
+        [
+          "bolsonaro",
+          33
+        ],
+        [
+          "fake",
+          30
+        ],
+        [
+          "não",
+          29
+        ],
+        [
+          "prefeitura",
+          23
+        ],
+        [
+          "governo",
+          22
+        ],
+        [
+          "veja",
+          21
+        ],
+        [
+          "fato",
+          21
+        ],
+        [
+          "candidatos",
+          20
+        ],
+        [
+          "semana",
+          20
+        ]
+      ],
+      "examples": [
+        {
+          "title": "Assessor do PT que ganhou na Mega-Sena comprou carro de luxo antes de resultado do sorteio #boato",
+          "url": "https://www.boatos.org/politica/assessor-pt-mega-sena-carro-luxo-antes-sorteio.html",
+          "topic": "golpes_plataformas",
+          "domain": "boatos.org"
+        },
+        {
+          "title": "É enganoso que trecho de ferrovia em GO seja obra do governo Bolsonaro",
+          "url": "https://noticias.uol.com.br/comprova/ultimas-noticias/2020/12/09/e-enganoso-que-trecho-de-ferrovia-em-go-seja-obra-do-governo-bolsonaro.htm",
+          "topic": "politica_eleicoes",
+          "domain": "noticias.uol.com.br"
+        },
+        {
+          "title": "Indulto de Natal libera 27 mil presos nas ruas a partir de hoje #boato",
+          "url": "https://www.boatos.org/brasil/indulto-natal-libera-27-mil-presos-hoje.html",
+          "topic": "seguranca_justica",
+          "domain": "boatos.org"
+        },
+        {
+          "title": "Adicional de periculosidade menor só valerá para jovens com seguro opcional",
+          "url": "https://noticias.uol.com.br/comprova/ultimas-noticias/2019/11/26/adicional-de-periculosidade-menor-so-valera-para-jovens-com-seguro-opcional.htm",
+          "topic": "economia",
+          "domain": "noticias.uol.com.br"
+        },
+        {
+          "title": "Veja o que é #FATO ou #FAKE nas declarações dos candidatos à Prefeitura de SP na 6ª semana de campanha | G1",
+          "url": "https://g1.globo.com/fato-ou-fake/noticia/2020/11/07/veja-o-que-e-fato-ou-fake-nas-declaracoes-dos-candidatos-a-prefeitura-de-sp-na-6a-semana-de-campanha.ghtml",
+          "topic": "saude_ciencia",
+          "domain": "g1.globo.com"
+        },
+        {
+          "title": "Analisamos as 15 tarefas cumpridas e anunciadas pelo Governo Bolsonaro!",
+          "url": "https://www.e-farsas.com/analisamos-as-15-tarefas-cumpridas-e-anunciadas-pelo-governo-bolsonaro.html",
+          "topic": "politica_eleicoes",
+          "domain": "e-farsas.com"
+        },
+        {
+          "title": "Veja o que é #FATO ou #FAKE nas declarações dos candidatos à Prefeitura de SP na 1ª semana de campanha do 2º turno | G1",
+          "url": "https://g1.globo.com/fato-ou-fake/noticia/2020/11/21/veja-o-que-e-fato-ou-fake-nas-declaracoes-dos-candidatos-a-prefeitura-de-sp-na-1a-semana-de-campanha-do-2o-turno.ghtml",
+          "topic": "saude_ciencia",
+          "domain": "g1.globo.com"
+        },
+        {
+          "title": "Post atribui a Bolsonaro sucesso em segurança com dados fora de contexto",
+          "url": "https://noticias.uol.com.br/comprova/ultimas-noticias/2019/10/09/post-atribui-a-bolsonaro-sucesso-em-seguranca-com-dados-fora-de-contexto.htm",
+          "topic": "politica_eleicoes",
+          "domain": "noticias.uol.com.br"
+        }
+      ]
+    },
+    {
+      "cluster_id": 2,
+      "document_count": 110,
+      "top_topics": [
+        [
+          "saude_ciencia",
+          107
+        ],
+        [
+          "golpes_plataformas",
+          2
+        ],
+        [
+          "politica_eleicoes",
+          1
+        ]
+      ],
+      "top_domains": [
+        [
+          "projetocomprova.com.br",
+          35
+        ],
+        [
+          "noticias.uol.com.br",
+          24
+        ],
+        [
+          "boatos.org",
+          23
+        ],
+        [
+          "g1.globo.com",
+          11
+        ],
+        [
+          "checamos.afp.com",
+          11
+        ],
+        [
+          "e-farsas.com",
+          6
+        ]
+      ],
+      "top_keywords": [
+        [
+          "covid",
+          157
+        ],
+        [
+          "tratamento",
+          152
+        ],
+        [
+          "coronavirus",
+          152
+        ],
+        [
+          "doenca",
+          139
+        ],
+        [
+          "medico",
+          110
+        ],
+        [
+          "remedio",
+          92
+        ],
+        [
+          "virus",
+          89
+        ],
+        [
+          "anvisa",
+          61
+        ],
+        [
+          "hospital",
+          59
+        ],
+        [
+          "vacina",
+          48
+        ]
+      ],
+      "top_title_terms": [
+        [
+          "covid",
+          70
+        ],
+        [
+          "não",
+          42
+        ],
+        [
+          "comprova",
+          39
+        ],
+        [
+          "projeto",
+          35
+        ],
+        [
+          "cloroquina",
+          29
+        ],
+        [
+          "hidroxicloroquina",
+          26
+        ],
+        [
+          "contra",
+          26
+        ],
+        [
+          "ivermectina",
+          25
+        ],
+        [
+          "boato",
+          23
+        ],
+        [
+          "tratamento",
+          20
+        ],
+        [
+          "estudo",
+          19
+        ],
+        [
+          "uso",
+          18
+        ]
+      ],
+      "examples": [
+        {
+          "title": "Protocolo de uso da cloroquina não aumentou pacientes recuperados no Brasil",
+          "url": "https://noticias.uol.com.br/comprova/ultimas-noticias/2020/06/08/protocolo-de-uso-da-cloroquina-nao-aumentou-pacientes-recuperados-no-brasil.htm",
+          "topic": "saude_ciencia",
+          "domain": "noticias.uol.com.br"
+        },
+        {
+          "title": "É #FAKE que Anvisa liberou Ivermectina e ainda ampliou sua dosagem para tratamento de Covid-19 | G1",
+          "url": "https://g1.globo.com/fato-ou-fake/coronavirus/noticia/2021/04/07/e-fake-que-anvisa-liberou-ivermectina-e-ainda-ampliou-sua-dosagem-para-tratamento-de-covid-19.ghtml",
+          "topic": "saude_ciencia",
+          "domain": "g1.globo.com"
+        },
+        {
+          "title": "Estudo da Henry Ford Health System não prova eficácia da cloroquina",
+          "url": "https://noticias.uol.com.br/comprova/ultimas-noticias/2020/07/23/estudo-da-henry-ford-health-system-nao-prova-eficacia-da-cloroquina.htm",
+          "topic": "saude_ciencia",
+          "domain": "noticias.uol.com.br"
+        },
+        {
+          "title": "OMS não se desculpou por reviravoltas com hidroxicloroquina",
+          "url": "https://noticias.uol.com.br/comprova/ultimas-noticias/2020/06/12/oms-nao-se-desculpou-por-reviravoltas-com-hidroxicloroquina.htm",
+          "topic": "saude_ciencia",
+          "domain": "noticias.uol.com.br"
+        },
+        {
+          "title": "Estudos comprovaram que a irisina \"blinda\" o corpo contra a COVID-19 e que é seguro voltar às academias?",
+          "url": "https://www.e-farsas.com/estudos-comprovaram-que-a-irisina-blinda-o-corpo-contra-a-covid-19-e-que-e-seguro-voltar-as-academias.html",
+          "topic": "saude_ciencia",
+          "domain": "e-farsas.com"
+        },
+        {
+          "title": "Estudo da Henry Ford Health System é insuficiente para provar eficácia da cloroquina contra a covid-19 : Projeto Comprova",
+          "url": "https://projetocomprova.com.br/publicações/estudo-da-henry-ford-health-system-e-insuficiente-para-provar-eficacia-da-cloroquina-contra-a-covid-19/",
+          "topic": "saude_ciencia",
+          "domain": "projetocomprova.com.br"
+        },
+        {
+          "title": "‘Tratamento precoce’ com hidroxicloroquina não evitou mortes em Porto Feliz : Projeto Comprova",
+          "url": "https://projetocomprova.com.br/publicações/tratamento-precoce-com-hidroxicloroquina-nao-evitou-mortes-em-porto-feliz/",
+          "topic": "saude_ciencia",
+          "domain": "projetocomprova.com.br"
+        },
+        {
+          "title": "Estudo descobriu que a pimenta-do-reino é eficaz contra o novo coronavírus?",
+          "url": "https://www.e-farsas.com/estudo-descobriu-que-a-pimenta-do-reino-e-eficaz-contra-o-novo-coronavirus.html",
+          "topic": "saude_ciencia",
+          "domain": "e-farsas.com"
+        }
+      ]
+    },
+    {
+      "cluster_id": 3,
+      "document_count": 116,
+      "top_topics": [
+        [
+          "golpes_plataformas",
+          81
+        ],
+        [
+          "saude_ciencia",
+          16
+        ],
+        [
+          "politica_eleicoes",
+          9
+        ],
+        [
+          "economia",
+          3
+        ],
+        [
+          "seguranca_justica",
+          3
+        ],
+        [
+          "internacional",
+          3
+        ]
+      ],
+      "top_domains": [
+        [
+          "boatos.org",
+          70
+        ],
+        [
+          "g1.globo.com",
+          43
+        ],
+        [
+          "e-farsas.com",
+          2
+        ],
+        [
+          "noticias.uol.com.br",
+          1
+        ]
+      ],
+      "top_keywords": [
+        [
+          "facebook",
+          89
+        ],
+        [
+          "whatsapp",
+          88
+        ],
+        [
+          "link",
+          56
+        ],
+        [
+          "celular",
+          46
+        ],
+        [
+          "golpe",
+          41
+        ],
+        [
+          "aplicativo",
+          34
+        ],
+        [
+          "instagram",
+          26
+        ],
+        [
+          "coronavirus",
+          19
+        ],
+        [
+          "imunizacao",
+          19
+        ],
+        [
+          "covid",
+          18
+        ]
+      ],
+      "top_title_terms": [
+        [
+          "boato",
+          69
+        ],
+        [
+          "whatsapp",
+          48
+        ],
+        [
+          "fake",
+          44
+        ],
+        [
+          "site",
+          23
+        ],
+        [
+          "está",
+          14
+        ],
+        [
+          "quem",
+          11
+        ],
+        [
+          "coronavírus",
+          9
+        ],
+        [
+          "vídeo",
+          9
+        ],
+        [
+          "dando",
+          8
+        ],
+        [
+          "mostre",
+          8
+        ],
+        [
+          "compartilhar",
+          8
+        ],
+        [
+          "programa",
+          8
+        ]
+      ],
+      "examples": [
+        {
+          "title": "Detran divulga novas multas valendo a partir de hoje e regra que exige renovação da CNH em 30 dias #boato",
+          "url": "https://www.boatos.org/brasil/detran-divulga-novas-multas-valendo-hoje-regra-renovacao-cnh-30-dias.html",
+          "topic": "golpes_plataformas",
+          "domain": "boatos.org"
+        },
+        {
+          "title": "É #FAKE foto que mostra Carlos Bolsonaro em frente a uma mesa cheia de celulares | G1",
+          "url": "https://g1.globo.com/fato-ou-fake/noticia/2020/05/29/e-fake-foto-que-mostra-carlos-bolsonaro-em-frente-a-uma-mesa-cheia-de-celulares.ghtml",
+          "topic": "politica_eleicoes",
+          "domain": "g1.globo.com"
+        },
+        {
+          "title": "Kwai libera cupons de bônus de R$ 150, R$ 250 e R$ 500 em site no WhatsApp #boato",
+          "url": "https://www.boatos.org/tecnologia/kwai-libera-cupons-bonus-r-150-r-250-r-500-site-whatsapp.html",
+          "topic": "golpes_plataformas",
+          "domain": "boatos.org"
+        },
+        {
+          "title": "O Boticário está dando perfume grátis de Dia dos Namorados em site no WhatsApp #boato",
+          "url": "https://www.boatos.org/tecnologia/o-boticario-perfume-gratis-dia-dos-namorados-site-whatsapp.html",
+          "topic": "golpes_plataformas",
+          "domain": "boatos.org"
+        },
+        {
+          "title": "Carteiro ladrão é procurado por assaltar pessoas; Compartilhe foto #boato",
+          "url": "https://www.boatos.org/brasil/carteiro-ladrao-procurado-por-assaltar.html",
+          "topic": "golpes_plataformas",
+          "domain": "boatos.org"
+        },
+        {
+          "title": "Dia da Mentira: seis boatos checados pelo Fato ou Fake que continuam a circular nas redes | G1",
+          "url": "https://g1.globo.com/fato-ou-fake/noticia/2019/04/01/dia-da-mentira-seis-boatos-checados-pelo-fato-ou-fake-que-continuam-a-circular-nas-redes.ghtml",
+          "topic": "golpes_plataformas",
+          "domain": "g1.globo.com"
+        },
+        {
+          "title": "Método mostra como usar WhatsApp sem precisar de internet #boato",
+          "url": "https://www.boatos.org/tecnologia/whatsapp-sem-precisar-de-internet.html",
+          "topic": "golpes_plataformas",
+          "domain": "boatos.org"
+        },
+        {
+          "title": "Vírus Gambarelli e WhatsApp Gold são as mais novas ameaças a telefones #boato",
+          "url": "https://www.boatos.org/tecnologia/virus-gambarelli-whatsapp-gold-ameacas-telefones.html",
+          "topic": "golpes_plataformas",
+          "domain": "boatos.org"
+        }
+      ]
+    },
+    {
+      "cluster_id": 4,
+      "document_count": 263,
+      "top_topics": [
+        [
+          "saude_ciencia",
+          228
+        ],
+        [
+          "politica_eleicoes",
+          13
+        ],
+        [
+          "seguranca_justica",
+          9
+        ],
+        [
+          "internacional",
+          7
+        ],
+        [
+          "golpes_plataformas",
+          6
+        ]
+      ],
+      "top_domains": [
+        [
+          "boatos.org",
+          98
+        ],
+        [
+          "projetocomprova.com.br",
+          44
+        ],
+        [
+          "checamos.afp.com",
+          39
+        ],
+        [
+          "g1.globo.com",
+          38
+        ],
+        [
+          "noticias.uol.com.br",
+          27
+        ],
+        [
+          "e-farsas.com",
+          17
+        ]
+      ],
+      "top_keywords": [
+        [
+          "covid",
+          289
+        ],
+        [
+          "coronavirus",
+          286
+        ],
+        [
+          "doenca",
+          220
+        ],
+        [
+          "virus",
+          214
+        ],
+        [
+          "medico",
+          130
+        ],
+        [
+          "hospital",
+          124
+        ],
+        [
+          "vacina",
+          98
+        ],
+        [
+          "tratamento",
+          78
+        ],
+        [
+          "ciencia",
+          54
+        ],
+        [
+          "imunizacao",
+          50
+        ]
+      ],
+      "top_title_terms": [
+        [
+          "covid",
+          105
+        ],
+        [
+          "boato",
+          99
+        ],
+        [
+          "coronavírus",
+          81
+        ],
+        [
+          "não",
+          64
+        ],
+        [
+          "comprova",
+          46
+        ],
+        [
+          "projeto",
+          44
+        ],
+        [
+          "sobre",
+          44
+        ],
+        [
+          "fake",
+          38
+        ],
+        [
+          "pandemia",
+          29
+        ],
+        [
+          "máscaras",
+          27
+        ],
+        [
+          "vídeo",
+          27
+        ],
+        [
+          "china",
+          21
+        ]
+      ],
+      "examples": [
+        {
+          "title": "Estes médicos não protestavam contra um “golpe” da COVID-19, mas defendiam os hospitais públicos na França",
+          "url": "https://checamos.afp.com//estes-medicos-nao-protestavam-contra-um-golpe-da-covid-19-mas-defendiam-os-hospitais-publicos-na",
+          "topic": "saude_ciencia",
+          "domain": "checamos.afp.com"
+        },
+        {
+          "title": "Texto engana ao afirmar que autópsias na Itália teriam indicado que ‘problema principal não era o coronavírus’ : Projeto Comprova",
+          "url": "https://projetocomprova.com.br/publicações/texto-engana-ao-afirmar-que-autopsias-na-italia-teriam-indicado-que-problema-principal-nao-era-o-coronavirus/",
+          "topic": "saude_ciencia",
+          "domain": "projetocomprova.com.br"
+        },
+        {
+          "title": "O experimento com um kiwi não prova que testes de antígenos são inválidos",
+          "url": "https://checamos.afp.com//o-experimento-com-um-kiwi-nao-prova-que-testes-de-antigenos-sao-invalidos",
+          "topic": "saude_ciencia",
+          "domain": "checamos.afp.com"
+        },
+        {
+          "title": "Desinformação sobre as supostas medidas de Trump contra Bill Gates, 5G, vacinas e covid-19",
+          "url": "https://checamos.afp.com//desinformacao-sobre-supostas-medidas-de-trump-contra-bill-gates-5g-vacinas-e-covid-19",
+          "topic": "internacional",
+          "domain": "checamos.afp.com"
+        },
+        {
+          "title": "Estudo publicado por Damares não atribui suicídios de crianças a isolamento",
+          "url": "https://noticias.uol.com.br/comprova/ultimas-noticias/2021/07/22/estudo-publicado-por-damares-nao-atribui-suicidios-de-criancas-a-isolamento.htm",
+          "topic": "saude_ciencia",
+          "domain": "noticias.uol.com.br"
+        },
+        {
+          "title": "Médico tira de contexto dados de estudo para sugerir que máscaras são ineficientes : Projeto Comprova",
+          "url": "https://projetocomprova.com.br/publicações/medico-tira-de-contexto-dados-de-estudo-para-sugerir-que-mascaras-sao-ineficientes/",
+          "topic": "saude_ciencia",
+          "domain": "projetocomprova.com.br"
+        },
+        {
+          "title": "Hospitais Albert Einstein está com 700 pacientes com coronavírus, Sírio-Libanês com 1400 e devemos estocar comida #boato",
+          "url": "https://www.boatos.org/saude/hospitais-albert-einstein-sirio-libanes-lotados-coronavirus.html",
+          "topic": "saude_ciencia",
+          "domain": "boatos.org"
+        },
+        {
+          "title": "Vídeo engana ao afirmar que vírus da covid-19 existe desde 2003 : Projeto Comprova",
+          "url": "https://projetocomprova.com.br/publicações/video-engana-ao-afirmar-que-virus-da-covid-19-existe-desde-2003/",
+          "topic": "saude_ciencia",
+          "domain": "projetocomprova.com.br"
+        }
+      ]
+    },
+    {
+      "cluster_id": 5,
+      "document_count": 94,
+      "top_topics": [
+        [
+          "politica_eleicoes",
+          85
+        ],
+        [
+          "internacional",
+          5
+        ],
+        [
+          "golpes_plataformas",
+          3
+        ],
+        [
+          "seguranca_justica",
+          1
+        ]
+      ],
+      "top_domains": [
+        [
+          "e-farsas.com",
+          35
+        ],
+        [
+          "projetocomprova.com.br",
+          17
+        ],
+        [
+          "noticias.uol.com.br",
+          13
+        ],
+        [
+          "boatos.org",
+          12
+        ],
+        [
+          "checamos.afp.com",
+          10
+        ],
+        [
+          "g1.globo.com",
+          7
+        ]
+      ],
+      "top_keywords": [
+        [
+          "eleicoes",
+          112
+        ],
+        [
+          "urna",
+          102
+        ],
+        [
+          "voto",
+          101
+        ],
+        [
+          "presidente",
+          97
+        ],
+        [
+          "tse",
+          66
+        ],
+        [
+          "eleicao",
+          54
+        ],
+        [
+          "deputado",
+          50
+        ],
+        [
+          "senador",
+          43
+        ],
+        [
+          "bolsonaro",
+          43
+        ],
+        [
+          "governo",
+          38
+        ]
+      ],
+      "top_title_terms": [
+        [
+          "não",
+          20
+        ],
+        [
+          "urnas",
+          18
+        ],
+        [
+          "projeto",
+          18
+        ],
+        [
+          "comprova",
+          18
+        ],
+        [
+          "votos",
+          13
+        ],
+        [
+          "boato",
+          12
+        ],
+        [
+          "voto",
+          11
+        ],
+        [
+          "fraude",
+          11
+        ],
+        [
+          "falso",
+          11
+        ],
+        [
+          "eleições",
+          11
+        ],
+        [
+          "sobre",
+          10
+        ],
+        [
+          "eletrônicas",
+          10
+        ]
+      ],
+      "examples": [
+        {
+          "title": "Desmentimos 9 fake news envolvendo o coronavírus!",
+          "url": "https://www.e-farsas.com/desmentimos-9-fake-news-envolvendo-o-coronavirus.html",
+          "topic": "politica_eleicoes",
+          "domain": "e-farsas.com"
+        },
+        {
+          "title": "Voto impresso já vale no Brasil desde 2002 e está previsto na Lei 10.408/2002 #boato",
+          "url": "https://www.boatos.org/politica/voto-impresso-lei-10408-2002-ja-vale.html",
+          "topic": "politica_eleicoes",
+          "domain": "boatos.org"
+        },
+        {
+          "title": "Será verdade que Jeanine Añez declarou ter traços arianos e nórdicos?",
+          "url": "https://www.e-farsas.com/sera-verdade-que-jeanine-anez-declarou-ter-tracos-arianos-e-nordicos.html",
+          "topic": "politica_eleicoes",
+          "domain": "e-farsas.com"
+        },
+        {
+          "title": "Governo do Maranhão vem fornecendo kits com cloroquina para tratamento do COVID-19?",
+          "url": "https://www.e-farsas.com/governo-do-maranhao-vem-fornecendo-kits-com-cloroquina-para-tratamento-do-covid-19.html",
+          "topic": "politica_eleicoes",
+          "domain": "e-farsas.com"
+        },
+        {
+          "title": "Vídeo não prova fraude em eleição de 2014",
+          "url": "https://noticias.uol.com.br/comprova/ultimas-noticias/2021/07/15/video-nao-prova-fraude-em-eleicao-de-2014.htm",
+          "topic": "politica_eleicoes",
+          "domain": "noticias.uol.com.br"
+        },
+        {
+          "title": "A denúncia de policiais sobre suposto problema nas urnas é de 2018 mas foi considerada infundada",
+          "url": "https://checamos.afp.com//denuncia-de-policiais-sobre-suposto-problema-nas-urnas-e-de-2018-mas-foi-considerada-infundada",
+          "topic": "politica_eleicoes",
+          "domain": "checamos.afp.com"
+        },
+        {
+          "title": "Foto de uma menina usando máscara e segurando um coala é verdadeira ou falsa?",
+          "url": "https://www.e-farsas.com/foto-de-uma-menina-usando-mascara-e-segurando-um-coala-e-verdadeira-ou-falsa.html",
+          "topic": "politica_eleicoes",
+          "domain": "e-farsas.com"
+        },
+        {
+          "title": "Conheça a verdade sobre a manifestante com o cartaz: \"Chega de universidade. Armas Sim!\"",
+          "url": "https://www.e-farsas.com/conheca-a-verdade-sobre-a-manifestante-que-causou-polemica-nas-redes-sociais.html",
+          "topic": "politica_eleicoes",
+          "domain": "e-farsas.com"
+        }
+      ]
+    },
+    {
+      "cluster_id": 6,
+      "document_count": 299,
+      "top_topics": [
+        [
+          "golpes_plataformas",
+          101
+        ],
+        [
+          "politica_eleicoes",
+          64
+        ],
+        [
+          "saude_ciencia",
+          44
+        ],
+        [
+          "seguranca_justica",
+          34
+        ],
+        [
+          "internacional",
+          32
+        ],
+        [
+          "meio_ambiente",
+          15
+        ]
+      ],
+      "top_domains": [
+        [
+          "e-farsas.com",
+          134
+        ],
+        [
+          "boatos.org",
+          121
+        ],
+        [
+          "checamos.afp.com",
+          15
+        ],
+        [
+          "g1.globo.com",
+          15
+        ],
+        [
+          "noticias.uol.com.br",
+          11
+        ],
+        [
+          "projetocomprova.com.br",
+          3
+        ]
+      ],
+      "top_keywords": [
+        [
+          "facebook",
+          101
+        ],
+        [
+          "whatsapp",
+          87
+        ],
+        [
+          "presidente",
+          81
+        ],
+        [
+          "eleicoes",
+          71
+        ],
+        [
+          "deputado",
+          69
+        ],
+        [
+          "voto",
+          63
+        ],
+        [
+          "urna",
+          63
+        ],
+        [
+          "senador",
+          63
+        ],
+        [
+          "estados unidos",
+          29
+        ],
+        [
+          "instagram",
+          29
+        ]
+      ],
+      "top_title_terms": [
+        [
+          "boato",
+          121
+        ],
+        [
+          "vídeo",
+          50
+        ],
+        [
+          "mostra",
+          36
+        ],
+        [
+          "foi",
+          34
+        ],
+        [
+          "será",
+          33
+        ],
+        [
+          "verdade",
+          32
+        ],
+        [
+          "não",
+          21
+        ],
+        [
+          "homem",
+          18
+        ],
+        [
+          "após",
+          17
+        ],
+        [
+          "fake",
+          16
+        ],
+        [
+          "foto",
+          15
+        ],
+        [
+          "são",
+          13
+        ]
+      ],
+      "examples": [
+        {
+          "title": "Médico mais jovem do mundo é Joshua Beckford, de 14 anos #boato",
+          "url": "https://www.boatos.org/mundo/medico-mais-jovem-mundo-joshua-beckford-14-anos.html",
+          "topic": "saude_ciencia",
+          "domain": "boatos.org"
+        },
+        {
+          "title": "É enganosa publicação que atribui à Shell óleo encontrado no Nordeste",
+          "url": "https://noticias.uol.com.br/comprova/ultimas-noticias/2019/10/22/e-enganosa-publicacao-que-atribui-a-shell-oleo-encontrado-no-nordeste.htm",
+          "topic": "politica_eleicoes",
+          "domain": "noticias.uol.com.br"
+        },
+        {
+          "title": "O vídeo registra o salto recorde de um paraquedista de um balão na estratosfera em 2012",
+          "url": "https://checamos.afp.com//o-video-registra-o-salto-recorde-de-um-paraquedista-de-um-balao-na-estratosfera-em-2012",
+          "topic": "golpes_plataformas",
+          "domain": "checamos.afp.com"
+        },
+        {
+          "title": "Dragão Azul (Glacus Atlantucus) é um dos animais mais venenosos do oceano #boato",
+          "url": "https://www.boatos.org/ciencia/dragao-azul-glacus-atlantucus-animais-mais-venenosos-oceano.html",
+          "topic": "golpes_plataformas",
+          "domain": "boatos.org"
+        },
+        {
+          "title": "Caminhoneiro cometeu suicídio devido a reforma da Previdência?",
+          "url": "https://www.e-farsas.com/caminhoneiro-cometeu-suicidio-devido-a-reforma-da-previdencia.html",
+          "topic": "politica_eleicoes",
+          "domain": "e-farsas.com"
+        },
+        {
+          "title": "A verdade sobre a \"fábula\" das formigas vermelhas e pretas que viralizou nas redes sociais!",
+          "url": "https://www.e-farsas.com/a-verdade-sobre-a-fabula-das-formigas-vermelhas-e-pretas-que-viralizou-nas-redes-sociais.html",
+          "topic": "internacional",
+          "domain": "e-farsas.com"
+        },
+        {
+          "title": "Este manifestante não fingiu machucar a cabeça em protesto por morte de George Floyd",
+          "url": "https://checamos.afp.com//este-manifestante-nao-fingiu-machucar-cabeca-em-protesto-por-morte-de-george-floyd",
+          "topic": "saude_ciencia",
+          "domain": "checamos.afp.com"
+        },
+        {
+          "title": "Menino autista está perdido no shopping RioMar e procura família #boato",
+          "url": "https://www.boatos.org/brasil/menino-autista-perdido-shopping-riomar.html",
+          "topic": "golpes_plataformas",
+          "domain": "boatos.org"
+        }
+      ]
+    },
+    {
+      "cluster_id": 7,
+      "document_count": 335,
+      "top_topics": [
+        [
+          "politica_eleicoes",
+          232
+        ],
+        [
+          "seguranca_justica",
+          45
+        ],
+        [
+          "golpes_plataformas",
+          28
+        ],
+        [
+          "internacional",
+          12
+        ],
+        [
+          "saude_ciencia",
+          8
+        ],
+        [
+          "economia",
+          4
+        ]
+      ],
+      "top_domains": [
+        [
+          "boatos.org",
+          202
+        ],
+        [
+          "noticias.uol.com.br",
+          34
+        ],
+        [
+          "e-farsas.com",
+          32
+        ],
+        [
+          "g1.globo.com",
+          25
+        ],
+        [
+          "checamos.afp.com",
+          21
+        ],
+        [
+          "projetocomprova.com.br",
+          21
+        ]
+      ],
+      "top_keywords": [
+        [
+          "presidente",
+          234
+        ],
+        [
+          "bolsonaro",
+          213
+        ],
+        [
+          "governo",
+          130
+        ],
+        [
+          "lula",
+          92
+        ],
+        [
+          "eleicoes",
+          83
+        ],
+        [
+          "ministro",
+          80
+        ],
+        [
+          "deputado",
+          45
+        ],
+        [
+          "eleicao",
+          37
+        ],
+        [
+          "facebook",
+          31
+        ],
+        [
+          "policia",
+          31
+        ]
+      ],
+      "top_title_terms": [
+        [
+          "boato",
+          202
+        ],
+        [
+          "bolsonaro",
+          106
+        ],
+        [
+          "lula",
+          39
+        ],
+        [
+          "não",
+          38
+        ],
+        [
+          "foi",
+          37
+        ],
+        [
+          "vídeo",
+          32
+        ],
+        [
+          "fake",
+          30
+        ],
+        [
+          "projeto",
+          23
+        ],
+        [
+          "diz",
+          22
+        ],
+        [
+          "stf",
+          21
+        ],
+        [
+          "comprova",
+          21
+        ],
+        [
+          "brasil",
+          20
+        ]
+      ],
+      "examples": [
+        {
+          "title": "Moro afastou promotor de caso Flávio Bolsonaro e delegado de caso Marielle #boato",
+          "url": "https://www.boatos.org/politica/moro-afastou-promotor-caso-flavio-bolsonaro-e-delegado-caso-marielle.html",
+          "topic": "politica_eleicoes",
+          "domain": "boatos.org"
+        },
+        {
+          "title": "FHC foi fundador do PT e oposição a Lula era apenas teatro #boato",
+          "url": "https://www.boatos.org/politica/fhc-foi-fundador-pt-oposicao-lula-apenas-teatro.html",
+          "topic": "politica_eleicoes",
+          "domain": "boatos.org"
+        },
+        {
+          "title": "Rodrigo Constantino acabou de ser bloqueado por 7 dias no Facebook e publicou lista de comunistas #boato",
+          "url": "https://www.boatos.org/politica/rodrigo-constantino-acabou-ser-bloqueado-7-dias-facebook-publicou-lista-comunistas.html",
+          "topic": "golpes_plataformas",
+          "domain": "boatos.org"
+        },
+        {
+          "title": "Bandidos se aproveitam de decisão do STF para empunhar metralhadoras em favela do Rio, mostra vídeo #boato",
+          "url": "https://www.boatos.org/entretenimento/bandidos-empunham-metralhadoras-em-favela-no-rj.html",
+          "topic": "seguranca_justica",
+          "domain": "boatos.org"
+        },
+        {
+          "title": "Ratinho expulsa Xuxa Meneghel da plateia de seu programa no SBT #boato",
+          "url": "https://www.boatos.org/entretenimento/ratinho-expulsa-xuxa-da-plateia-do-programa-no-sbt.html",
+          "topic": "golpes_plataformas",
+          "domain": "boatos.org"
+        },
+        {
+          "title": "Luciano Hang diz que quem não votou em Bolsonaro deixa produtos da Havan com mau cheiro #boato",
+          "url": "https://www.boatos.org/politica/luciano-hang-quem-nao-votou-bolsonaro-deixa-produtos-mau-cheiro.html",
+          "topic": "politica_eleicoes",
+          "domain": "boatos.org"
+        },
+        {
+          "title": "Protógenes Queiroz teve que fugir para Suíça porque descobriu fraude do PT nas urnas eletrônicas #boato",
+          "url": "https://www.boatos.org/brasil/protogenes-queiroz-fugir-suica-porque-descobriu-fraude-pt-urnas-eletronicas.html",
+          "topic": "politica_eleicoes",
+          "domain": "boatos.org"
+        },
+        {
+          "title": "Petróleo para 80 anos de consumo é achado em Mato Grosso no governo Bolsonaro #boato",
+          "url": "https://www.boatos.org/brasil/petroleo-encontrado-mato-grosso-bolsonaro.html",
+          "topic": "politica_eleicoes",
+          "domain": "boatos.org"
+        }
+      ]
+    }
+  ]
+}

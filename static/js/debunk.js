@@ -35,32 +35,43 @@ function renderResult(data) {
   const verdictLabel = isMatched ? 'Checagem Encontrada' : 'Abstinência';
   const badgeClass   = isMatched ? 'matched' : 'abstained';
 
-  let evidenceBlock = '';
-  if (evidence.titulo || evidence.url) {
-    evidenceBlock = `
+  const sources = (data.sources && data.sources.length)
+    ? data.sources.map(s => ({
+        titulo: s.title, dominio: s.domain, url: s.url, data_publicacao: s.published_at,
+        cluster_label: s.cluster_label, cluster_review_status: s.cluster_review_status,
+        cluster_confidence: s.cluster_confidence, score: s.score, rerank_score: s.rerank_score,
+      }))
+    : ((evidence.titulo || evidence.url) ? [evidence] : []);
+
+  const evidenceBlock = sources.map((src, i) => `
       <div class="evidence-card">
-        <p class="section-title">📋 Checagem de referência</p>
-        ${evidence.titulo
-          ? `<p class="evidence-title">${escHtml(evidence.titulo)}</p>`
+        <p class="section-title">📋 Checagem de referência${sources.length > 1 ? ` ${i + 1}` : ''}</p>
+        ${src.titulo
+          ? `<p class="evidence-title">${escHtml(src.titulo)}</p>`
           : ''}
         <div class="evidence-meta">
-          ${evidence.dominio
-            ? `<span>🏢 ${escHtml(evidence.dominio)}</span>`
+          ${src.dominio
+            ? `<span>🏢 ${escHtml(src.dominio)}</span>`
             : ''}
-          ${evidence.data_publicacao
-            ? `<span>📅 ${escHtml(evidence.data_publicacao)}</span>`
+          ${src.data_publicacao
+            ? `<span>📅 ${escHtml(src.data_publicacao)}</span>`
+            : ''}
+          ${src.cluster_label
+            ? `<span class="cluster-chip" title="Cluster usado no re-ranking">${escHtml(src.cluster_label)}</span>`
+            : ''}
+          ${src.cluster_review_status
+            ? `<span class="cluster-chip ${src.cluster_review_status === 'approved' ? 'approved' : 'pending'}">${escHtml(src.cluster_review_status)}</span>`
             : ''}
         </div>
-        ${evidence.url
+        ${src.url
           ? `<a class="source-link"
-                href="${escHtml(evidence.url)}"
+                href="${escHtml(src.url)}"
                 target="_blank"
                 rel="noopener noreferrer">
                🔗 Leia a checagem completa
              </a>`
           : ''}
-      </div>`;
-  }
+      </div>`).join('');
 
   area.innerHTML = `
     <div class="result-card">
