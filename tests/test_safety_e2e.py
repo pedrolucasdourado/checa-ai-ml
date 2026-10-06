@@ -1,6 +1,10 @@
 import os
+
+import pytest
 from src.fact_check_service import FactCheckService
 
+# Teste manual: usa Qdrant, OpenAI (moderação) e embeddings reais.
+@pytest.mark.skipif(not os.environ.get("RUN_E2E"), reason="e2e manual: defina RUN_E2E=1")
 def test_safety():
     service = FactCheckService.get_instance()
     
