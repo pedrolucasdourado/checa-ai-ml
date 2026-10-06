@@ -184,6 +184,33 @@ uvicorn app:app --reload --port 8000
 python scripts/generate_debunk.py --query "Hackers invadiram o TSE e transformaram justificativas em votos"
 ```
 
+## Observabilidade e LLMOps (Langfuse)
+
+Cada chamada a `POST /api/debunk` gera um **trace** no Langfuse:
+
+```text
+verify-claim            (trace: latência total, session, tags, prompt_version)
+├─ retrieval            (retriever: query → chunks/scores, candidatos vs. selecionados)
+│  └─ embed-query       (embedding: tokens + custo)
+└─ llm-generation       (generation: prompt, resposta, tokens in/out, custo, finish_reason)
+```
+
+| Necessidade | Onde aparece |
+|---|---|
+| Traces por requisição | Langfuse > Tracing; `trace_id` volta no JSON da API |
+| Tokens e custo | `usage_details` por generation/embedding; custo inferido pelo Langfuse a partir do modelo |
+| Latência | duração de cada span (embedding, busca, LLM) e do trace |
+| Feedback do usuário | botões 👍/👎 → `POST /api/feedback` → score `user_feedback` no trace |
+| Qualidade online | scores automáticos: `top_similarity`, `abstained`, `sources_grounded` (URL citada que não veio dos laudos = alucinação de link) |
+| Versão do prompt | `src/rag/prompts.py` (`PROMPT_VERSION`); filtre por tag `prompt:<versão>` |
+
+**Configuração:** copie `.env.example` para `.env` e preencha `LANGFUSE_PUBLIC_KEY`,
+`LANGFUSE_SECRET_KEY` e `LANGFUSE_BASE_URL`. Sem as chaves o tracing é desligado e nada muda no pipeline.
+Com `LANGFUSE_CAPTURE_CONTENT=false` o texto dos usuários não é enviado (só métricas e metadados).
+
+> Ao mudar o texto de um prompt, incremente `PROMPT_VERSION`. Ao trocar `LLM_MODEL`, confira
+> em Langfuse > Settings > Models se o preço do modelo está cadastrado (senão o custo fica vazio).
+
 ## Tecnologias Utilizadas
 
 | Camada | Tecnologia | Papel |
