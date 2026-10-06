@@ -6,7 +6,6 @@
   Este repositório contém a inteligência por trás do **Checa AI**. Aqui é onde desenvolvemos, treinamos e versionamos os modelos de Machine Learning que são consumidos pelo [checa-ai-backend](https://github.com/pedrolucasdourado/checa-ai-backend).
 </div>
 
-
 ---
 
 ## Objetivo
@@ -91,6 +90,20 @@ Essa estrutura evita o *efeito de familiaridade* (illusory truth effect), onde a
 │                                          └─────────────────────┘     │
 └──────────────────────────────────────────────────────────────────────┘
 ```
+
+## Análise de Dados (EDA)
+Realizamos uma auditoria rigorosa nos datasets para garantir a qualidade do treinamento e evitar vieses (*shortcut learning*).
+
+**Resumo do Corpus:**
+- **Volume Total:** 36.773 registros.
+- **Amostras Únicas:** 22.410 registros (após deduplicação).
+- **Bases Utilizadas:** `FakeRecogna`, `FakeTrueBr` e `fakeWhatsApp`.
+- **Compatibilidade BERT:** Mediana de **105 tokens** por texto; apenas **8.24%** dos registros excedem o limite de 512 tokens do BERTimbau.
+
+**Principais Achados:**
+- **Deduplicação:** Identificada alta taxa de duplicatas na base de WhatsApp (71%), tratadas para evitar *overfitting*.
+- **Leakage:** Detecção de "assinaturas" de sites de checagem (ex: G1, Lupa), essenciais para a limpeza dos dados e evitar que o modelo aprenda a fonte em vez do conteúdo.
+- **Estilometria:** Notou-se maior densidade de exclamações e uso de Caps Lock em notícias falsas.
 
 ## Estrutura do Projeto
 
@@ -203,3 +216,6 @@ python scripts/generate_debunk.py --query "Hackers invadiram o TSE e transformar
 | <img src="https://github.com/jhsribeiro.png" width="60" alt="Jhiovana Ribeiro" /> | [Jhiovana Ribeiro](https://github.com/jhsribeiro) | Data Specialist / Data Engineering (ETL) |
 | <img src="https://github.com/LeoAlec.png" width="60" alt="Leo Alec" /> | [Leo Alec](https://github.com/LeoAlec) | Data Specialist / Data Science |
 | <img src="https://github.com/NasserCaixeta.png" width="60" alt="Nasser Camêllo Caixeta" /> | [Nasser Camêllo Caixeta](https://github.com/NasserCaixeta) | Backend Specialist / AI Orchestrator |
+
+---
+Desenvolvido para o projeto Checa AI.
