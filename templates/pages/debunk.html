@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ title }}</title>
+  <meta name="description" content="Verifique se uma mensagem suspeita é um boato usando inteligência artificial e checagens jornalísticas reais." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/debunk.css" />
+</head>
+<body>
+  <div class="layout">
+
+    <!-- ─── Sidebar ──────────────────────────────────────────── -->
+    {% include "components/sidebar.html" %}
+
+    <!-- ─── Main Content ─────────────────────────────────────── -->
+    <main class="main-content">
+      <div class="page-header">
+        <div class="page-title-group">
+          <span class="page-icon">🔍</span>
+          <div>
+            <h1 class="page-title">Verificador de Boatos</h1>
+            <p class="page-subtitle">Cole uma mensagem suspeita e a IA irá cruzá-la com checagens jornalísticas reais.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── Input Card ────────────────────────────────────── -->
+      <section class="input-card">
+        <label for="claim-input" class="input-label">
+          📋 Mensagem suspeita recebida
+        </label>
+        <textarea
+          id="claim-input"
+          class="claim-textarea"
+          placeholder="Cole aqui o texto do boato, corrente de WhatsApp ou publicação suspeita…"
+          rows="6"
+          maxlength="2000"
+        ></textarea>
+        <div class="input-footer">
+          <span class="char-count"><span id="char-count">0</span>/2000 caracteres</span>
+          <button id="verify-btn" class="verify-btn" onclick="verifyDebunk()">
+            <span class="btn-icon">⚡</span>
+            <span class="btn-text">Verificar mensagem</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- ─── Result Area ───────────────────────────────────── -->
+      <section id="result-area" class="result-area hidden"></section>
+
+      <!-- ─── Examples ─────────────────────────────────────── -->
+      <section class="examples-section">
+        <p class="examples-label">Exemplos para testar:</p>
+        <div class="examples-grid">
+          <button class="example-chip" onclick="fillExample(this)">
+            Hackers invadiram o TSE e transformaram as justificativas em votos válidos
+          </button>
+          <button class="example-chip" onclick="fillExample(this)">
+            Estão jogando fora cédulas de votação em caminhões
+          </button>
+          <button class="example-chip" onclick="fillExample(this)">
+            A vacina da CoronaVac foi proibida nos EUA e na Europa
+          </button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="/static/js/debunk.js"></script>
+</body>
+</html>
