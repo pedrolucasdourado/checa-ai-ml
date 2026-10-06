@@ -39,6 +39,12 @@ data/*
 !data/**/.gitkeep
 !data/raw/
 !data/raw/*
+# Dados processados são versionados com DVC: só os ponteiros .dvc vão para o git
+!data/processed/
+data/processed/*
+!data/processed/*.dvc
+!data/processed/.gitignore
+!data/processed/.gitkeep
 models/*.pkl
 models/*.h5
 models/*.joblib
