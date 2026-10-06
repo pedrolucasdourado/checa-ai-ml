@@ -36,16 +36,20 @@ except ImportError:
     pass   # python-dotenv opcional
 
 import openai
-from sentence_transformers import SentenceTransformer
-from qdrant_client import QdrantClient
 
 # ──────────────────────────── Configurações ───────────────────────────
-QDRANT_DB_PATH  = Path("data/qdrant_db")
-COLLECTION_NAME = "fact_checks_pt"
-EMBED_MODEL     = "paraphrase-multilingual-mpnet-base-v2"
-LLM_MODEL       = "gpt-4o-mini"
-LLM_TEMPERATURE = 0.2
-DEFAULT_THRESHOLD = 0.55   # limiar de abstinência (base atual: 200 docs)
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from src.config import (  # noqa: E402
+    COLLECTION_NAME,
+    EMBED_MODEL,
+    LLM_MODEL,
+    LLM_TEMPERATURE,
+    QDRANT_PATH,
+    QDRANT_URL,
+    SIMILARITY_THRESHOLD as DEFAULT_THRESHOLD,   # limiar de abstinência
+)
+from src.rag.embeddings import EmbeddingProvider, get_embedding_provider  # noqa: E402
+from src.rag.qdrant import get_qdrant_client  # noqa: E402
 DEFAULT_QUERY = (
     "Hackers invadiram o TSE e transformaram as justificativas em votos válidos"
 )
@@ -88,18 +92,18 @@ fundamentada para desmentir a alegação recebida. Siga as regras do sistema.
 
 
 # ──────────────────────────── Funções ─────────────────────────────────
-def load_embed_model() -> SentenceTransformer:
-    print("🔄 Carregando modelo de embeddings…", flush=True)
-    return SentenceTransformer(EMBED_MODEL)
+def load_embed_model() -> EmbeddingProvider:
+    print("🔄 Carregando provider de embeddings…", flush=True)
+    return get_embedding_provider()
 
 
 def retrieve(
     query: str,
-    model: SentenceTransformer,
+    model: EmbeddingProvider,
     client: QdrantClient,
     top_k: int = 1,
 ) -> list:
-    vec = model.encode(query, normalize_embeddings=True, convert_to_numpy=True).tolist()
+    vec = model.embed_query(query)
     results = client.query_points(
         collection_name=COLLECTION_NAME,
         query=vec,
@@ -118,7 +122,7 @@ def build_prompt(query: str, hit) -> tuple[str, str]:
         dominio=p.get("dominio", ""),
         data_publicacao=p.get("data_publicacao", ""),
         url=p.get("url", ""),
-        texto_completo=p.get("texto_completo", ""),
+        texto_completo=p.get("texto_chunk") or p.get("texto_completo", ""),
     )
     system = SYSTEM_PROMPT.format(
         dominio=p.get("dominio", ""),
@@ -162,7 +166,7 @@ def print_hit_summary(hit, query: str) -> None:
     print(f"  Data                  : {p.get('data_publicacao', '')}")
     print(f"  URL                   : {p.get('url', '')}")
     print(f"\n  Trecho do laudo:")
-    snippet = " ".join(p.get("texto_completo", "").split()[:60]) + "…"
+    snippet = " ".join((p.get("texto_chunk") or p.get("texto_completo", "")).split()[:60]) + "…"
     print(textwrap.fill(snippet, width=70, initial_indent="  ", subsequent_indent="  "))
     print_separator()
 
@@ -177,7 +181,11 @@ def run(args: argparse.Namespace) -> None:
 
     # 1. Carrega modelo e cliente Qdrant
     embed_model = load_embed_model()
-    qdrant = QdrantClient(path=str(QDRANT_DB_PATH))
+    qdrant = get_qdrant_client(
+        url=None if args.local else args.qdrant_url,
+        path=args.qdrant_path,
+        local_fallback=args.local,
+    )
 
     # 2. Recupera o top-1 da base vetorial
     print("\n🔍 Buscando checagem relevante no índice Qdrant…")
@@ -245,5 +253,8 @@ if __name__ == "__main__":
         default=LLM_TEMPERATURE,
         help="Temperatura do LLM (padrão: 0.2)",
     )
+    parser.add_argument("--qdrant-url", type=str, default=QDRANT_URL, help="URL do Qdrant server")
+    parser.add_argument("--qdrant-path", type=Path, default=QDRANT_PATH, help="Diretório Qdrant local")
+    parser.add_argument("--local", action="store_true", help="Usa Qdrant local em vez do server")
     args = parser.parse_args()
     run(args)

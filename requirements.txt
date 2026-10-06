@@ -14,3 +14,13 @@ jupyterlab
 fastapi
 uvicorn
 pydantic
+# RAG pipeline:
+sentence-transformers
+qdrant-client
+openai
+python-dotenv
+tqdm
+trafilatura
+cloudscraper
+# Tests:
+pytest
