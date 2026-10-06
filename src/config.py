@@ -84,3 +84,18 @@ CLUSTER_HIGH_CONFIDENCE_BONUS = _env_float("CLUSTER_HIGH_CONFIDENCE_BONUS", 0.00
 # ─── LLM ─────────────────────────────────────────────────────────────
 LLM_MODEL = os.environ.get("LLM_MODEL", "gpt-4o-mini")
 LLM_TEMPERATURE = _env_float("LLM_TEMPERATURE", 0.2)
+# Timeout (s) e retries do cliente OpenAI; sem isso uma chamada pendurada trava o worker.
+LLM_TIMEOUT_SECONDS = _env_float("LLM_TIMEOUT_SECONDS", 30.0)
+LLM_MAX_RETRIES = _env_int("LLM_MAX_RETRIES", 2)
+
+
+def _env_bool(name: str, default: bool) -> bool:
+    return os.environ.get(name, str(default)).strip().lower() in {"1", "true", "yes", "on"}
+
+
+# ─── Observabilidade (Langfuse) ──────────────────────────────────────
+# O SDK lê LANGFUSE_PUBLIC_KEY / LANGFUSE_SECRET_KEY / LANGFUSE_BASE_URL do ambiente.
+# Sem as chaves, o tracing vira no-op e o pipeline funciona normalmente.
+LANGFUSE_ENABLED = _env_bool("LANGFUSE_ENABLED", True)
+# false → traces guardam só tamanho/metadados, nunca o texto do usuário (LGPD).
+LANGFUSE_CAPTURE_CONTENT = _env_bool("LANGFUSE_CAPTURE_CONTENT", True)
