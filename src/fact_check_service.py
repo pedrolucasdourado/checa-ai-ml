@@ -15,6 +15,8 @@ apenas uma vez no startup do servidor.
 from __future__ import annotations
 
 import os
+import re
+from urllib.parse import urlsplit
 
 from src.config import (
     COLLECTION_NAME,
@@ -73,6 +75,44 @@ fundamentada para desmentir a alegação recebida. Siga as regras do sistema.
 
 _ABSTENTION_MESSAGE = "Abstenção: Nenhuma checagem oficial encontrada para essa alegação."
 
+_BACKEND_SYSTEM_PROMPT = """\
+Você verifica alegações usando somente os laudos fornecidos. Escreva uma
+contranarrativa clara, em português, de até 500 caracteres para WhatsApp.
+Cite cada laudo usado pelo número entre colchetes, como [1]. Não inclua
+links nem uma lista de fontes: a API acrescentará as fontes citadas.
+Não invente fatos ou citações.
+"""
+
+_BACKEND_USER_PROMPT = """\
+Alegação: {query}
+
+Laudos de checagem:
+{contexto}
+
+Responda apenas com a contranarrativa curta e suas citações numeradas.
+"""
+
+_NARRATIVE_LIMIT = 500
+_CITATION_PATTERN = re.compile(r"\[(\d+)\]")
+
+
+class VerificationGenerationError(RuntimeError):
+    """A geração não produziu um resultado fundamentado para o contrato v1."""
+
+
+def _safe_source_url(url: str) -> bool:
+    try:
+        parsed = urlsplit(url)
+        return (
+            parsed.scheme in {"http", "https"}
+            and bool(parsed.hostname)
+            and parsed.username is None
+            and parsed.password is None
+            and not any(char.isspace() for char in url)
+        )
+    except (TypeError, ValueError):
+        return False
+
 
 def _evidence_to_dict(ev: Evidence) -> dict:
     return {
@@ -111,6 +151,7 @@ class FactCheckService:
     def __init__(self) -> None:
         self._embedder = get_embedding_provider()
         self._qdrant = get_qdrant_client()
+        self._llm_client = None
 
     @classmethod
     def get_instance(cls) -> "FactCheckService":
@@ -154,7 +195,10 @@ class FactCheckService:
                 "Defina a variável de ambiente ou adicione ao arquivo .env."
             )
 
-        client = openai.OpenAI(api_key=api_key)
+        client = getattr(self, "_llm_client", None)
+        if client is None:
+            client = openai.OpenAI(api_key=api_key)
+            self._llm_client = client
         resp = client.chat.completions.create(
             model=LLM_MODEL,
             temperature=LLM_TEMPERATURE,
@@ -212,3 +256,54 @@ class FactCheckService:
             "sources": [_source_to_dict(s) for s in sources],
             "counter_narrative": counter_narrative,
         }
+
+    def verify_claim_for_backend(self, text: str) -> dict:
+        """Return the grounded, compact v1 result consumed by the backend."""
+        evidences = self._retrieve(text)
+        best_score = max((ev.score for ev in evidences), default=0.0)
+        result = {
+            "schema_version": 1,
+            "verdict": "insufficient_evidence",
+            "similarity_score": round(best_score, 4),
+            "counter_narrative": None,
+            "sources": [],
+        }
+        if best_score < SIMILARITY_THRESHOLD:
+            return result
+
+        selected_ids = {ev.document_id for ev in unique_sources(evidences)[:2]}
+        selected = [ev for ev in evidences if ev.document_id in selected_ids]
+        context, used = build_context(selected, MAX_CONTEXT_CHARS)
+        prompt = _BACKEND_USER_PROMPT.format(query=text, contexto=context)
+        narrative = self._call_llm(_BACKEND_SYSTEM_PROMPT, prompt)
+        if len(narrative) > _NARRATIVE_LIMIT:
+            condensation_prompt = (
+                f"Reduza o texto a no máximo {_NARRATIVE_LIMIT} caracteres, "
+                "mantendo somente fatos dos laudos e as citações numeradas. "
+                f"Responda apenas com o texto reduzido.\n\n{narrative}"
+            )
+            narrative = self._call_llm(_BACKEND_SYSTEM_PROMPT, condensation_prompt)
+        if len(narrative) > _NARRATIVE_LIMIT:
+            raise VerificationGenerationError("contranarrativa excede o tamanho permitido")
+
+        cited = {int(number) for number in _CITATION_PATTERN.findall(narrative)}
+        if not cited or any(number < 1 or number > len(used) for number in cited):
+            raise VerificationGenerationError("citação sem fonte recuperada")
+
+        sources = []
+        seen_urls: set[str] = set()
+        for number, ev in enumerate(used, 1):
+            if number not in cited:
+                continue
+            if not _safe_source_url(ev.url):
+                raise VerificationGenerationError("fonte citada possui URL inválida")
+            if ev.url not in seen_urls:
+                sources.append({"title": ev.titulo, "domain": ev.dominio, "url": ev.url})
+                seen_urls.add(ev.url)
+
+        result.update(
+            verdict="matched",
+            counter_narrative=narrative,
+            sources=sources,
+        )
+        return result

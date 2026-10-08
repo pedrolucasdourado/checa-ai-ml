@@ -110,3 +110,109 @@ def test_cluster_rerank_changes_source_order_without_changing_best_similarity(se
         "https://g1.globo.com/pending",
     ]
     assert r["sources"][0]["cluster_review_status"] == "approved"
+
+
+def test_v1_insufficient_hides_weak_sources(service):
+    service.hits = [hit("weak", fcs.SIMILARITY_THRESHOLD - 0.05)]
+
+    result = service.verify_claim_for_backend("alegação curta")
+
+    assert result == {
+        "schema_version": 1,
+        "verdict": "insufficient_evidence",
+        "similarity_score": round(fcs.SIMILARITY_THRESHOLD - 0.05, 4),
+        "counter_narrative": None,
+        "sources": [],
+    }
+    assert service.prompts == []
+
+
+def test_v1_matched_returns_only_cited_sources(service):
+    service.hits = [hit("a", 0.90), hit("b", 0.85), hit("c", 0.80)]
+    service._call_llm = lambda system, user: "O fato foi verificado [2]."
+
+    result = service.verify_claim_for_backend("alegação curta")
+
+    assert result["schema_version"] == 1
+    assert result["verdict"] == "matched"
+    assert result["similarity_score"] == 0.90
+    assert result["counter_narrative"] == "O fato foi verificado [2]."
+    assert [source["url"] for source in result["sources"]] == ["https://g1.globo.com/b"]
+
+
+@pytest.mark.parametrize("bad_output", ["Afirmação [3].", "Afirmação sem citação."])
+def test_v1_rejects_fabricated_citations(service, bad_output):
+    service.hits = [hit("a", 0.90), hit("b", 0.85)]
+    service._call_llm = lambda system, user: bad_output
+
+    with pytest.raises(RuntimeError, match="citação|fonte"):
+        service.verify_claim_for_backend("alegação curta")
+
+
+def test_v1_rejects_unsafe_cited_source(service):
+    unsafe = hit("a", 0.90)
+    unsafe.payload["url"] = "javascript:alert(1)"
+    service.hits = [unsafe]
+    service._call_llm = lambda system, user: "Afirmação verificada [1]."
+
+    with pytest.raises(RuntimeError, match="fonte"):
+        service.verify_claim_for_backend("alegação curta")
+
+
+def test_v1_deduplicates_cited_source_urls(service):
+    first = hit("a", 0.90)
+    second = hit("b", 0.85)
+    second.payload["url"] = first.payload["url"]
+    service.hits = [first, second]
+    service._call_llm = lambda system, user: "O fato foi verificado [1] [2]."
+
+    result = service.verify_claim_for_backend("alegação curta")
+
+    assert [source["url"] for source in result["sources"]] == ["https://g1.globo.com/a"]
+
+
+def test_v1_condenses_overlong_narrative_once(service):
+    service.hits = [hit("a", 0.90)]
+    outputs = ["Palavra " * 100 + "[1].", "O fato correto está no laudo [1]."]
+
+    def respond(system, user):
+        return outputs.pop(0)
+
+    service._call_llm = respond
+
+    result = service.verify_claim_for_backend("alegação curta")
+
+    assert result["counter_narrative"] == "O fato correto está no laudo [1]."
+    assert outputs == []
+
+
+def test_v1_rejects_narrative_still_overlong_after_condensation(service):
+    service.hits = [hit("a", 0.90)]
+    service._call_llm = lambda system, user: "Palavra " * 100 + "[1]."
+
+    with pytest.raises(RuntimeError, match="tamanho"):
+        service.verify_claim_for_backend("alegação curta")
+
+
+def test_llm_client_reused_across_requests(monkeypatch):
+    import openai
+
+    constructions = []
+
+    class FakeCompletions:
+        def create(self, **kwargs):
+            return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content="Resposta"))])
+
+    client = SimpleNamespace(chat=SimpleNamespace(completions=FakeCompletions()))
+
+    def build_client(**kwargs):
+        constructions.append(kwargs)
+        return client
+
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    monkeypatch.setattr(openai, "OpenAI", build_client)
+    service = object.__new__(fcs.FactCheckService)
+
+    assert service._call_llm("sistema", "primeira") == "Resposta"
+    assert service._call_llm("sistema", "segunda") == "Resposta"
+    assert constructions == [{"api_key": "test-key"}]
