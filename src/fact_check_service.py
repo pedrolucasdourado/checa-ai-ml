@@ -14,8 +14,8 @@ apenas uma vez no startup do servidor.
 
 from __future__ import annotations
 
+import logging
 import os
-import re
 
 from src import observability
 from src.config import (
@@ -34,6 +34,7 @@ from src.config import (
 )
 from src.rag.corpus_version import corpus_version
 from src.rag.embeddings import get_embedding_provider
+from src.rag.guardrails import RESPONSE_FORMAT, enforce_grounding, parse_answer
 from src.rag.prompts import (
     ABSTENTION_MESSAGE as _ABSTENTION_MESSAGE,
     PROMPT_VERSION,
@@ -50,7 +51,7 @@ from src.rag.retriever import (
     with_cluster_rerank,
 )
 
-_URL_RE = re.compile(r"https?://[^\s\)\]\"'<>]+")
+log = logging.getLogger("checa-ai.service")
 
 
 def _evidence_to_dict(ev: Evidence) -> dict:
@@ -135,7 +136,15 @@ class FactCheckService:
             },
         ) as obs:
             hits = self._search(query, limit=top_k * RETRIEVAL_OVERFETCH)
-            evidences = with_cluster_rerank([evidence_from_hit(h) for h in hits])
+            candidates = [evidence_from_hit(h) for h in hits]
+            # Guardrail: laudos raspados da web são entrada não confiável.
+            blocked = [ev for ev in candidates if ev.injection_risk == "high"]
+            if blocked:
+                log.warning(
+                    "Guardrail: %d chunk(s) com prompt injection excluídos: %s",
+                    len(blocked), sorted({ev.url for ev in blocked}),
+                )
+            evidences = with_cluster_rerank([ev for ev in candidates if ev.injection_risk != "high"])
             selected = select_evidences(
                 evidences,
                 max_chunks=top_k,
@@ -147,7 +156,12 @@ class FactCheckService:
                     {"url": ev.url, "score": round(ev.score, 4), "cluster": ev.cluster_label}
                     for ev in selected
                 ],
-                metadata={"candidates": len(hits), "selected": len(selected)},
+                metadata={
+                    "candidates": len(hits),
+                    "selected": len(selected),
+                    "injection_blocked": len(blocked),
+                    "injection_medium": sum(ev.injection_risk == "medium" for ev in selected),
+                },
             )
         return selected
 
@@ -188,7 +202,10 @@ class FactCheckService:
             **({"prompt": bundle.langfuse_prompt} if bundle and bundle.langfuse_prompt else {}),
         ) as obs:
             resp = client.chat.completions.create(
-                model=LLM_MODEL, temperature=LLM_TEMPERATURE, messages=messages
+                model=LLM_MODEL,
+                temperature=LLM_TEMPERATURE,
+                messages=messages,
+                response_format=RESPONSE_FORMAT,  # {texto, fontes_usadas}
             )
             text = (resp.choices[0].message.content or "").strip()
             usage = getattr(resp, "usage", None)
@@ -284,8 +301,14 @@ class FactCheckService:
         contexto, used = build_context(evidences, MAX_CONTEXT_CHARS)
         user_prompt = prompt.render_user(query=user_message, contexto=contexto)
 
-        counter_narrative = self._call_llm(prompt.render_system(), user_prompt)
+        raw = self._call_llm(prompt.render_system(), user_prompt)
         sources = unique_sources(used)
+        answer, structured = parse_answer(raw)
+        counter_narrative, report = enforce_grounding(
+            answer, [(s.url, s.dominio) for s in sources], structured
+        )
+        if report.sanitized:
+            log.warning("Guardrail: URLs fora do contexto removidas: %s", report.ungrounded_urls)
 
         return {
             "status": "matched",
@@ -293,6 +316,7 @@ class FactCheckService:
             "evidence": _evidence_to_dict(used[0]),
             "sources": [_source_to_dict(s) for s in sources],
             "counter_narrative": counter_narrative,
+            "guardrails": report.to_dict(),
         }
 
     @staticmethod
@@ -305,14 +329,18 @@ class FactCheckService:
             trace_id, "abstained", float(result["status"] == "abstained"), data_type="BOOLEAN"
         )
         if result["status"] == "matched":
-            # Checagem determinística anti-link-inventado: toda URL citada precisa
-            # estar entre as fontes recuperadas.
-            allowed = {s["url"] for s in result["sources"]}
-            cited = set(_URL_RE.findall(result["counter_narrative"]))
+            # Mede a saída crua do LLM (antes da sanitização): taxa de link inventado.
+            bad = result["guardrails"]["ungrounded_urls"]
             observability.score_trace(
                 trace_id,
                 "sources_grounded",
-                float(cited <= allowed),
+                float(not bad),
                 data_type="BOOLEAN",
-                comment=None if cited <= allowed else f"URLs fora do contexto: {sorted(cited - allowed)}"[:500],
+                comment=None if not bad else f"URLs fora do contexto: {bad}"[:500],
+            )
+            observability.score_trace(
+                trace_id,
+                "structured_output",
+                float(result["guardrails"]["structured"]),
+                data_type="BOOLEAN",
             )

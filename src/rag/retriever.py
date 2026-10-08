@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 
+from src.rag.guardrails import injection_risk
 from src.config import (
     CLUSTER_APPROVED_BONUS,
     CLUSTER_HIGH_CONFIDENCE_BONUS,
@@ -35,6 +36,7 @@ class Evidence:
     cluster_confidence: str = ""
     cluster_review_status: str = ""
     rerank_score: float | None = None
+    injection_risk: str = "low"
 
 
 def _optional_int(value) -> int | None:
@@ -49,13 +51,15 @@ def _optional_int(value) -> int | None:
 def evidence_from_hit(hit) -> Evidence:
     """Converte um ScoredPoint do Qdrant em `Evidence` (aceita o payload legado)."""
     p = hit.payload or {}
+    texto = p.get("texto_chunk") or p.get("texto_completo", "")
     return Evidence(
         document_id=p.get("document_id") or p.get("url", ""),
         titulo=p.get("titulo", ""),
         dominio=p.get("dominio", ""),
         url=p.get("url", ""),
         data_publicacao=p.get("data_publicacao", "") or "",
-        texto=p.get("texto_chunk") or p.get("texto_completo", ""),
+        texto=texto,
+        injection_risk=injection_risk(f"{p.get('titulo', '')}\n{texto}", p.get("injection_risk", "")),
         score=float(hit.score),
         chunk_index=int(p.get("chunk_index", 0)),
         cluster_id=_optional_int(p.get("cluster_id")),
