@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import os
 from typing import Literal
 
 from anyio import CapacityLimiter, to_thread
@@ -63,6 +64,8 @@ async def verify(body: VerifyRequest) -> VerifyResponse:
 @router.get("/ready")
 async def ready() -> dict[str, str]:
     try:
+        if not os.environ.get("OPENAI_API_KEY"):
+            raise ValueError("OpenAI generation key is not configured")
         service = await to_thread.run_sync(FactCheckService.get_instance)
         collection = await to_thread.run_sync(service._qdrant.get_collection, COLLECTION_NAME)
         vectors = collection.config.params.vectors

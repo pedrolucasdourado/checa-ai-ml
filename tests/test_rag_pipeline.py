@@ -171,6 +171,32 @@ def test_v1_deduplicates_cited_source_urls(service):
     assert [source["url"] for source in result["sources"]] == ["https://g1.globo.com/a"]
 
 
+def test_v1_chooses_source_that_fits_reply_budget(service):
+    too_long = hit("long", 0.90)
+    too_long.payload["url"] = "https://g1.globo.com/" + "x" * 650
+    short = hit("short", 0.85)
+    service.hits = [too_long, short]
+    service._call_llm = lambda system, user: "O laudo esclarece a alegação [1]."
+
+    result = service.verify_claim_for_backend("alegação curta")
+
+    assert result["verdict"] == "matched"
+    assert [source["url"] for source in result["sources"]] == ["https://g1.globo.com/short"]
+
+
+def test_v1_condenses_to_leave_space_for_long_source(service):
+    long_source = hit("long", 0.90)
+    long_source.payload["url"] = "https://g1.globo.com/" + "x" * 400
+    service.hits = [long_source]
+    outputs = ["Palavra " * 50 + "[1].", "O laudo esclarece [1]."]
+    service._call_llm = lambda system, user: outputs.pop(0)
+
+    result = service.verify_claim_for_backend("alegação curta")
+
+    assert result["counter_narrative"] == "O laudo esclarece [1]."
+    assert outputs == []
+
+
 def test_v1_condenses_overlong_narrative_once(service):
     service.hits = [hit("a", 0.90)]
     outputs = ["Palavra " * 100 + "[1].", "O fato correto está no laudo [1]."]

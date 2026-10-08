@@ -12,6 +12,7 @@ from src.fact_check_service import FactCheckService, VerificationGenerationError
 
 @pytest.fixture
 def fake_service(monkeypatch):
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
     result = {
         "schema_version": 1,
         "verdict": "insufficient_evidence",
@@ -87,6 +88,12 @@ async def test_readiness_checks_collection_and_dimension(client, fake_service):
     service._qdrant.get_collection = lambda name: (_ for _ in ()).throw(RuntimeError("missing"))
     assert (await client.get("/ready")).status_code == 503
     service._qdrant.get_collection = lambda name: SimpleNamespace(config=SimpleNamespace(params=SimpleNamespace(vectors=SimpleNamespace(size=384))))
+    assert (await client.get("/ready")).status_code == 503
+
+
+@pytest.mark.asyncio
+async def test_readiness_requires_generation_key(client, fake_service, monkeypatch):
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     assert (await client.get("/ready")).status_code == 503
 
 

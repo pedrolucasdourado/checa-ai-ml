@@ -77,7 +77,7 @@ _ABSTENTION_MESSAGE = "Abstenção: Nenhuma checagem oficial encontrada para ess
 
 _BACKEND_SYSTEM_PROMPT = """\
 Você verifica alegações usando somente os laudos fornecidos. Escreva uma
-contranarrativa clara, em português, de até 500 caracteres para WhatsApp.
+contranarrativa clara, em português, de até {max_chars} caracteres para WhatsApp.
 Cite cada laudo usado pelo número entre colchetes, como [1]. Não inclua
 links nem uma lista de fontes: a API acrescentará as fontes citadas.
 Não invente fatos ou citações.
@@ -93,6 +93,8 @@ Responda apenas com a contranarrativa curta e suas citações numeradas.
 """
 
 _NARRATIVE_LIMIT = 500
+_REPLY_FIXED_RESERVE = 350
+_MIN_NARRATIVE_CHARS = 80
 _CITATION_PATTERN = re.compile(r"\[(\d+)\]")
 
 
@@ -271,19 +273,43 @@ class FactCheckService:
         if best_score < SIMILARITY_THRESHOLD:
             return result
 
-        selected_ids = {ev.document_id for ev in unique_sources(evidences)[:2]}
+        selected_sources: list[Evidence] = []
+        selected_urls: set[str] = set()
+        source_chars = 0
+        max_source_chars = 1000 - _REPLY_FIXED_RESERVE - _MIN_NARRATIVE_CHARS
+        for ev in unique_sources(evidences):
+            if not _safe_source_url(ev.url):
+                continue
+            additional = 0 if ev.url in selected_urls else len(ev.url) + bool(selected_urls)
+            if source_chars + additional > max_source_chars:
+                continue
+            selected_sources.append(ev)
+            selected_urls.add(ev.url)
+            source_chars += additional
+            if len(selected_sources) == 2:
+                break
+        if not selected_sources or not any(
+            ev.score >= SIMILARITY_THRESHOLD for ev in selected_sources
+        ):
+            raise VerificationGenerationError("nenhuma fonte válida cabe na resposta")
+
+        narrative_limit = min(
+            _NARRATIVE_LIMIT, 1000 - _REPLY_FIXED_RESERVE - source_chars
+        )
+        selected_ids = {ev.document_id for ev in selected_sources}
         selected = [ev for ev in evidences if ev.document_id in selected_ids]
         context, used = build_context(selected, MAX_CONTEXT_CHARS)
         prompt = _BACKEND_USER_PROMPT.format(query=text, contexto=context)
-        narrative = self._call_llm(_BACKEND_SYSTEM_PROMPT, prompt)
-        if len(narrative) > _NARRATIVE_LIMIT:
+        system_prompt = _BACKEND_SYSTEM_PROMPT.format(max_chars=narrative_limit)
+        narrative = self._call_llm(system_prompt, prompt)
+        if len(narrative) > narrative_limit:
             condensation_prompt = (
-                f"Reduza o texto a no máximo {_NARRATIVE_LIMIT} caracteres, "
+                f"Reduza o texto a no máximo {narrative_limit} caracteres, "
                 "mantendo somente fatos dos laudos e as citações numeradas. "
                 f"Responda apenas com o texto reduzido.\n\n{narrative}"
             )
-            narrative = self._call_llm(_BACKEND_SYSTEM_PROMPT, condensation_prompt)
-        if len(narrative) > _NARRATIVE_LIMIT:
+            narrative = self._call_llm(system_prompt, condensation_prompt)
+        if len(narrative) > narrative_limit:
             raise VerificationGenerationError("contranarrativa excede o tamanho permitido")
 
         cited = {int(number) for number in _CITATION_PATTERN.findall(narrative)}
