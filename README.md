@@ -214,6 +214,21 @@ Com `LANGFUSE_CAPTURE_CONTENT=false` o texto dos usuários não é enviado (só 
 - **Anti-link-inventado:** toda URL citada precisa estar entre as evidências recuperadas; URLs fora do contexto são removidas da resposta e uma fonte real é creditada. O score `sources_grounded` mede a saída crua do modelo (taxa de alucinação de link) e `structured_output` mede a aderência ao schema.
 - **Prompt injection nos laudos:** chunks com risco `high` (payload da ingestão ou reavaliação em runtime) são excluídos do contexto; o prompt também instrui o modelo a tratar laudos como dados não confiáveis.
 
+### CI/CD (GitHub Actions)
+
+| Quando | Workflow | O que faz |
+|---|---|---|
+| Todo PR / push na main | `ci.yml` › `tests` | `pytest` (inclui contrato do prompt, guardrails, harness do eval) |
+| PR que muda prompt, guardrails, retriever, serviço, `config.py` ou `evals/` | `ci.yml` › `eval` | Eval de regressão (`scripts/eval_generation.py`) no golden set `evals/golden.jsonl`; **falha o PR** se faithfulness, abstenção correta, saída estruturada, links ou injection ficarem fora de `evals/thresholds.json` |
+| Merge na main com `prompts.py` alterado | `prompts-staging.yml` | Publica a nova versão no Langfuse com label `staging` (idempotente) |
+| Release publicado (ou manual) | `release.yml` | Eval → aprovação do environment `production` → move o label `production` para a versão do release |
+
+- **Check obrigatório da branch:** `ci-ok` (verde = testes ok e eval ok ou desnecessário).
+- **Prompt alterado?** Incremente `PROMPT_VERSION` e rode `python scripts/sync_prompts.py --write-lock`; sem isso o teste de contrato falha. `python scripts/sync_prompts.py --check` mostra o que mudaria no Langfuse sem escrever.
+- **Eval local:** `python scripts/eval_generation.py` (usa `OPENAI_API_KEY`, ~11 casos, centavos). O golden set é autocontido (evidências no próprio caso), sem Qdrant/DVC. Ao encontrar uma falha real em produção, adicione o caso a `evals/golden.jsonl`.
+- **Rollback:** republique o release anterior ou mova o label `production` no Langfuse.
+- **Setup único no GitHub:** secrets `OPENAI_API_KEY`, `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY` (+ variável `LANGFUSE_BASE_URL`); environment `production` com *Required reviewers*; proteger a `main` exigindo o check `ci-ok`. PRs de forks não recebem secrets (o eval é pulado com aviso).
+
 ### Gestão de prompts
 
 `src/rag/prompts.py` é o módulo único de prompts (usado pela API e por `scripts/generate_debunk.py`).
@@ -222,13 +237,13 @@ Em runtime o prompt `debunk` é lido do **Langfuse Prompt Management** pelo labe
 estiverem indisponíveis, o texto local do módulo é usado como fallback.
 
 ```bash
-python scripts/sync_prompts.py                    # publica o texto local como nova versão (label staging)
-python scripts/sync_prompts.py --label production # ou direto em produção
+python scripts/sync_prompts.py            # texto local → Langfuse com label staging (só cria versão se mudou)
+python scripts/sync_prompts.py --promote  # move production para a versão local (normalmente feito pelo release.yml)
 ```
 
 Editar o prompt no Langfuse (ou rodar o sync) cria uma nova versão sem redeploy; **rollback** = mover
 o label `production` para a versão anterior. Variáveis usam `{{query}}` e `{{contexto}}`.
-Se mudar o texto local, incremente `PROMPT_VERSION`.
+Se mudar o texto local, incremente `PROMPT_VERSION` e atualize o lock (ver CI/CD).
 
 > Ao trocar `LLM_MODEL`, confira
 > em Langfuse > Settings > Models se o preço do modelo está cadastrado (senão o custo fica vazio).
