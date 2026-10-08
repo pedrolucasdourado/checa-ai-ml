@@ -236,6 +236,12 @@ verify-claim            (trace: latência total, session, tags, prompt_version)
 `LANGFUSE_SECRET_KEY` e `LANGFUSE_BASE_URL`. Sem as chaves o tracing é desligado e nada muda no pipeline.
 Com `LANGFUSE_CAPTURE_CONTENT=false` o texto dos usuários não é enviado (só métricas e metadados).
 
+### Guardrails (`src/rag/guardrails.py`)
+
+- **Saída estruturada:** o LLM responde `{texto, fontes_usadas}` (JSON Schema estrito + Pydantic). Se vier fora do schema, o texto cru é aproveitado.
+- **Anti-link-inventado:** toda URL citada precisa estar entre as evidências recuperadas; URLs fora do contexto são removidas da resposta e uma fonte real é creditada. O score `sources_grounded` mede a saída crua do modelo (taxa de alucinação de link) e `structured_output` mede a aderência ao schema.
+- **Prompt injection nos laudos:** chunks com risco `high` (payload da ingestão ou reavaliação em runtime) são excluídos do contexto; o prompt também instrui o modelo a tratar laudos como dados não confiáveis.
+
 ### Gestão de prompts
 
 `src/rag/prompts.py` é o módulo único de prompts (usado pela API e por `scripts/generate_debunk.py`).
