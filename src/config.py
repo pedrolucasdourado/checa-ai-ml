@@ -127,3 +127,4 @@ RESULTADOS DA BUSCA WEB:
 
 TAREFA: Com base nos resultados acima, forneça um resumo informativo e neutro. Lembre-se de não dar um veredito final.
 """
+PROMPT_LABEL = os.environ.get("PROMPT_LABEL", "production")

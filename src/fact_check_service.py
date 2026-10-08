@@ -39,8 +39,8 @@ from src.rag.embeddings import get_embedding_provider
 from src.rag.prompts import (
     ABSTENTION_MESSAGE as _ABSTENTION_MESSAGE,
     PROMPT_VERSION,
-    SYSTEM_PROMPT as _SYSTEM_PROMPT,
-    USER_PROMPT as _USER_PROMPT,
+    current_prompt,
+    load_prompt,
 )
 from src.rag.qdrant import get_qdrant_client
 from src.rag.retriever import (
@@ -186,13 +186,16 @@ class FactCheckService:
             {"role": "system", "content": system},
             {"role": "user", "content": user},
         ]
+        bundle = current_prompt.get()
+        prompt_version = bundle.version if bundle else PROMPT_VERSION
         with observability.observation(
             "llm-generation",
             as_type="generation",
             model=LLM_MODEL,
             model_parameters={"temperature": LLM_TEMPERATURE},
             input=messages,
-            version=PROMPT_VERSION,
+            version=prompt_version,
+            **({"prompt": bundle.langfuse_prompt} if bundle and bundle.langfuse_prompt else {}),
         ) as obs:
             resp = client.chat.completions.create(
                 model=LLM_MODEL, temperature=LLM_TEMPERATURE, messages=messages
@@ -211,7 +214,7 @@ class FactCheckService:
                     if usage
                     else None
                 ),
-                metadata={"finish_reason": resp.choices[0].finish_reason, "prompt_version": PROMPT_VERSION},
+                metadata={"finish_reason": resp.choices[0].finish_reason, "prompt_version": prompt_version},
             )
         return text
 
@@ -246,11 +249,15 @@ class FactCheckService:
         )
         
         # 2. Geração de síntese cautelosa
+        # Prompt do DeepSearch é outro: não atribuir a versão do prompt "debunk" a esta generation.
+        token = current_prompt.set(None)
         try:
             narrative = self._call_llm(DEEP_SEARCH_SYSTEM_PROMPT, user_prompt)
         except Exception as e:
             logger.error("Erro ao gerar síntese DeepSearch: %s", e)
             return self._abstention(score, evidences)
+        finally:
+            current_prompt.reset(token)
 
         # 3. Validação de Segurança (Saída)
         val_result = validate_output(narrative)
@@ -299,14 +306,23 @@ class FactCheckService:
                 "trace_id":          str | None,       # id p/ feedback; None sem Langfuse
             }
         """
+        prompt = load_prompt()
+        token = current_prompt.set(prompt)
+        try:
+            return self._verify_traced(user_message, session_id, prompt)
+        finally:
+            current_prompt.reset(token)
+
+    def _verify_traced(self, user_message: str, session_id: str | None, prompt) -> dict:
         with observability.request_trace(
             "verify-claim",
             input=user_message,
             session_id=session_id,
-            version=PROMPT_VERSION,
-            tags=[f"prompt:{PROMPT_VERSION}", f"llm:{LLM_MODEL}", f"corpus:{corpus_version()}"],
+            version=prompt.version,
+            tags=[f"prompt:{prompt.version}", f"llm:{LLM_MODEL}", f"corpus:{corpus_version()}"],
             metadata={
-                "prompt_version": PROMPT_VERSION,
+                "prompt_version": prompt.version,
+                "prompt_source": prompt.source,
                 "llm_model": LLM_MODEL,
                 "embedding_model": EMBED_MODEL,
                 "collection": COLLECTION_NAME,
@@ -314,7 +330,7 @@ class FactCheckService:
                 "threshold": SIMILARITY_THRESHOLD,
             },
         ) as trace:
-            result = self._verify(user_message)
+            result = self._verify(user_message, prompt)
             result["trace_id"] = trace.trace_id
             self._score_result(trace.trace_id, result)
             trace.update(
@@ -327,7 +343,7 @@ class FactCheckService:
             )
         return result
 
-    def _verify(self, user_message: str) -> dict:
+    def _verify(self, user_message: str, prompt) -> dict:
         # 1. Input Guardrail: Moderation (Toxicity)
         mod_result = check_moderation(user_message)
         if not mod_result.is_safe:
@@ -364,9 +380,9 @@ class FactCheckService:
 
         # 4. Generation
         contexto, used = build_context(evidences, MAX_CONTEXT_CHARS)
-        user_prompt = _USER_PROMPT.format(query=user_message, contexto=contexto)
+        user_prompt = prompt.render_user(query=user_message, contexto=contexto)
 
-        counter_narrative = self._call_llm(_SYSTEM_PROMPT, user_prompt)
+        counter_narrative = self._call_llm(prompt.render_system(), user_prompt)
 
         # 5. Output Guardrail: Safety Validation
         val_result = validate_output(counter_narrative)

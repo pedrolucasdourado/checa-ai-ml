@@ -192,6 +192,43 @@ def request_trace(
                 log.exception("Falha ao fechar atributos do trace '%s'.", name)
 
 
+def fetch_chat_prompt(name: str, label: str, fallback: list[dict]) -> tuple[Any, list[dict]] | None:
+    """
+    Busca um prompt de chat no Langfuse (com cache do SDK). Retorna
+    (objeto_prompt, mensagens_sem_compilar) ou None se desligado, indisponível
+    ou se o SDK devolveu o fallback (prompt/label inexistente).
+    """
+    client = _get_client()
+    if client is None:
+        return None
+    try:
+        prompt = client.get_prompt(name, label=label, type="chat", fallback=fallback)
+        if getattr(prompt, "is_fallback", False):
+            log.warning("Prompt '%s' (label=%s) indisponível no Langfuse; usando o local.", name, label)
+            return None
+        return prompt, list(prompt.prompt)
+    except Exception:  # noqa: BLE001
+        log.exception("Falha ao buscar o prompt '%s' no Langfuse.", name)
+        return None
+
+
+def create_chat_prompt(
+    name: str, messages: list[dict], *, labels: list[str], commit_message: str | None = None
+) -> int | None:
+    """Cria uma nova versão do prompt. Retorna o número da versão ou None se falhar."""
+    client = _get_client()
+    if client is None:
+        return None
+    try:
+        created = client.create_prompt(
+            name=name, type="chat", prompt=messages, labels=labels, commit_message=commit_message
+        )
+        return created.version
+    except Exception:  # noqa: BLE001
+        log.exception("Falha ao criar o prompt '%s' no Langfuse.", name)
+        return None
+
+
 def score_trace(
     trace_id: str,
     name: str,

@@ -235,3 +235,52 @@ def test_deep_search_fallback_is_scored(lf, service, monkeypatch):
     assert r["status"] == "deep_searched"
     scores = {s["name"]: s["value"] for s in lf.scores}
     assert scores["deep_searched"] == 1.0 and scores["abstained"] == 0.0
+
+
+# ─── Gestão de prompts ───────────────────────────────────────────────
+from src.rag import prompts  # noqa: E402
+
+
+def test_render_replaces_only_known_variables():
+    out = prompts.render("a {{query}} b {{contexto}} {x}", query="Q", contexto="{{query}}")
+    assert out == "a Q b {{query}} {x}"
+
+
+def test_load_prompt_falls_back_to_local_without_langfuse(monkeypatch):
+    monkeypatch.setattr(observability, "_client", None)
+    monkeypatch.setattr(observability, "_client_failed", True)
+    p = prompts.load_prompt()
+    assert (p.source, p.version) == ("local", prompts.PROMPT_VERSION)
+
+
+def test_load_prompt_uses_langfuse_version_and_links_generation(lf, service):
+    remote = SimpleNamespace(
+        version=7,
+        is_fallback=False,
+        prompt=[
+            {"role": "system", "content": "SISTEMA remoto"},
+            {"role": "user", "content": "Pergunta: {{query}} | {{contexto}}"},
+        ],
+    )
+    lf.get_prompt = lambda name, **kw: remote
+    service.hits = [_hit("a", 0.9)]
+    sent = {}
+    service._call_llm = lambda s, u: sent.update(system=s, user=u) or "ok"
+    service.verify_claim("boato")
+
+    assert sent["system"] == "SISTEMA remoto" and sent["user"].startswith("Pergunta: boato |")
+    assert prompts.current_prompt.get() is None  # contexto restaurado após a requisição
+
+
+def test_load_prompt_ignores_fallback_object(lf):
+    lf.get_prompt = lambda name, **kw: SimpleNamespace(version=1, is_fallback=True, prompt=[])
+    assert prompts.load_prompt().source == "local"
+
+
+def test_deep_search_generation_is_not_linked_to_debunk_prompt(service, monkeypatch):
+    seen = {}
+    monkeypatch.setattr(fcs, "perform_web_search", lambda q, max_results=5: [{"title": "t", "snippet": "s", "url": "https://w.example"}])
+    service._call_llm = lambda s, u: seen.update(bundle=prompts.current_prompt.get()) or "síntese"
+    service.hits = [_hit("a", fcs.SIMILARITY_THRESHOLD - 0.05)]
+    assert service.verify_claim("alegação qualquer")["status"] == "deep_searched"
+    assert seen["bundle"] is None
