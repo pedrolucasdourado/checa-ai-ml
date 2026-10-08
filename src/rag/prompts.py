@@ -1,14 +1,30 @@
 """
 src/rag/prompts.py
 ─────────────────────────────────────────────────────────────────────
-Fonte única dos prompts do pipeline de geração.
+Fonte única dos prompts do pipeline de geração (API e CLI).
 
-Qualquer mudança de texto aqui DEVE incrementar PROMPT_VERSION: a versão
-é gravada em cada trace/generation do Langfuse, o que permite comparar
-fidelidade, custo e abstenção entre versões do prompt.
+Gestão de prompts:
+  - Langfuse Prompt Management é a fonte de verdade em runtime: cada edição
+    gera uma nova versão e o label (PROMPT_LABEL: production/staging) escolhe
+    qual versão está no ar, sem redeploy. Rollback = mover o label.
+  - Os textos abaixo são o *fallback* (e o seed do `scripts/sync_prompts.py`):
+    sem Langfuse, sem chaves ou com o prompt inexistente o pipeline segue
+    funcionando com eles.
+  - Variáveis usam a sintaxe {{variavel}} do Langfuse.
+  - Mudou o texto local? Incremente PROMPT_VERSION e rode o sync.
 """
 
 from __future__ import annotations
+
+import logging
+from contextvars import ContextVar
+from dataclasses import dataclass
+from typing import Any
+
+from src import observability
+from src.config import PROMPT_LABEL
+
+log = logging.getLogger("checa-ai.prompts")
 
 PROMPT_NAME = "debunk"
 PROMPT_VERSION = "debunk-v1"
@@ -34,10 +50,10 @@ Se os laudos não tratarem da alegação, diga isso em vez de supor.
 
 USER_PROMPT = """\
 --- ALEGAÇÃO RECEBIDA ---
-{query}
+{{query}}
 
 --- LAUDOS DE CHECAGEM RECUPERADOS ---
-{contexto}
+{{contexto}}
 
 --- TAREFA ---
 Com base EXCLUSIVAMENTE nos laudos acima, redija uma contranarrativa clara e \
@@ -45,3 +61,68 @@ fundamentada para desmentir a alegação recebida. Siga as regras do sistema.
 """
 
 ABSTENTION_MESSAGE = "Abstenção: Nenhuma checagem oficial encontrada para essa alegação."
+
+
+@dataclass(frozen=True)
+class PromptBundle:
+    """Prompt resolvido: textos com {{variáveis}} + identificação da versão."""
+
+    system: str
+    user: str
+    version: str            # ex.: "debunk-v1" (local) ou "debunk@3" (Langfuse)
+    source: str             # "langfuse" | "local"
+    langfuse_prompt: Any = None   # objeto do SDK, para ligar a generation ao prompt
+
+    def render_user(self, **variables: str) -> str:
+        return render(self.user, **variables)
+
+    def render_system(self, **variables: str) -> str:
+        return render(self.system, **variables)
+
+
+# Prompt da requisição em andamento; _call_llm usa para vincular a generation.
+current_prompt: ContextVar[PromptBundle | None] = ContextVar("current_prompt", default=None)
+
+
+def render(template: str, **variables: str) -> str:
+    """Substitui {{var}}. Mais seguro que str.format: contexto com chaves não quebra."""
+    for key, value in variables.items():
+        template = template.replace("{{" + key + "}}", str(value))
+    return template
+
+
+def local_prompt() -> PromptBundle:
+    return PromptBundle(SYSTEM_PROMPT, USER_PROMPT, PROMPT_VERSION, "local")
+
+
+def load_prompt() -> PromptBundle:
+    """Busca o prompt `PROMPT_NAME` no label PROMPT_LABEL; cai no texto local se preciso."""
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": USER_PROMPT},
+    ]
+    fetched = observability.fetch_chat_prompt(PROMPT_NAME, PROMPT_LABEL, messages)
+    if fetched is None:
+        return local_prompt()
+    lf_prompt, remote = fetched
+    by_role = {m["role"]: m["content"] for m in remote if isinstance(m, dict) and "role" in m}
+    if "system" not in by_role or "user" not in by_role:
+        log.warning("Prompt '%s' no Langfuse sem mensagens system+user; usando o local.", PROMPT_NAME)
+        return local_prompt()
+    return PromptBundle(
+        by_role["system"],
+        by_role["user"],
+        f"{PROMPT_NAME}@{lf_prompt.version}",
+        "langfuse",
+        lf_prompt,
+    )
+
+
+def sync_to_langfuse(labels: list[str]) -> int | None:
+    """Cria no Langfuse uma nova versão com os textos locais. Retorna a versão criada."""
+    return observability.create_chat_prompt(
+        PROMPT_NAME,
+        [{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": USER_PROMPT}],
+        labels=labels,
+        commit_message=PROMPT_VERSION,
+    )

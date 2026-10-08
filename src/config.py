@@ -99,3 +99,4 @@ def _env_bool(name: str, default: bool) -> bool:
 LANGFUSE_ENABLED = _env_bool("LANGFUSE_ENABLED", True)
 # false → traces guardam só tamanho/metadados, nunca o texto do usuário (LGPD).
 LANGFUSE_CAPTURE_CONTENT = _env_bool("LANGFUSE_CAPTURE_CONTENT", True)
+PROMPT_LABEL = os.environ.get("PROMPT_LABEL", "production")
