@@ -179,6 +179,39 @@ uvicorn app:app --reload --port 8000
 # Acesse: http://localhost:8000/debunk
 ```
 
+### API de verificação em contêiner
+
+O `ml-api` atende `POST /api/v1/verify` na porta local `18001` e conversa com o
+Qdrant na rede Docker `checa-ai-ml-shared`. A coleção vetorial precisa estar
+indexada previamente com o mesmo provedor, modelo e dimensão de embeddings.
+O contêiner não executa ingestão nem cria a coleção automaticamente.
+
+Configure `OPENAI_API_KEY` no `.env` quando usar embeddings OpenAI ou geração
+via OpenAI. Ajuste `EMBEDDING_PROVIDER`, `EMBEDDING_MODEL` e
+`QDRANT_COLLECTION` para a coleção realmente indexada. Se usar embeddings
+locais, defina explicitamente as três variáveis correspondentes e
+`INSTALL_LOCAL_EMBEDDINGS=true` antes do build. Essa opção instala
+`sentence-transformers` na imagem; a imagem padrão usa embeddings OpenAI.
+
+```bash
+docker compose config -q
+docker compose build ml-api
+docker compose up -d
+curl -i http://localhost:18001/ready
+```
+
+`/health` indica que o servidor está vivo. `/ready` retorna `200` somente se
+a coleção configurada existir e sua dimensão corresponder ao modelo de
+embeddings; retorna `503` quando o índice estiver ausente ou incompatível.
+
+Exemplo de chamada:
+
+```bash
+curl -X POST http://localhost:18001/api/v1/verify \
+  -H 'Content-Type: application/json' \
+  -d '{"text":"Mensagem a verificar"}'
+```
+
 ### 5. Teste via CLI (sem servidor)
 ```bash
 python scripts/generate_debunk.py --query "Hackers invadiram o TSE e transformaram justificativas em votos"

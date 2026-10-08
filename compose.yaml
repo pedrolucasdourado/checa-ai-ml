@@ -1,4 +1,26 @@
 services:
+  ml-api:
+    build:
+      context: .
+      args:
+        INSTALL_LOCAL_EMBEDDINGS: ${INSTALL_LOCAL_EMBEDDINGS:-false}
+    ports:
+      - "127.0.0.1:18001:8000"
+    environment:
+      QDRANT_URL: http://qdrant:6333
+      EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-openai}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-text-embedding-3-small}
+      QDRANT_COLLECTION: ${QDRANT_COLLECTION:-fact_checks_pt_v2_openai}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      LLM_MODEL: ${LLM_MODEL:-gpt-4o-mini}
+      LLM_TEMPERATURE: ${LLM_TEMPERATURE:-0.2}
+    depends_on:
+      qdrant:
+        condition: service_healthy
+    networks:
+      - shared
+    restart: unless-stopped
+
   qdrant:
     image: qdrant/qdrant:v1.13.4
     container_name: checa-ai-qdrant
@@ -7,6 +29,8 @@ services:
       - "6334:6334"
     volumes:
       - qdrant_storage:/qdrant/storage
+    networks:
+      - shared
     healthcheck:
       test: ["CMD-SHELL", "bash -c '</dev/tcp/127.0.0.1/6333'"]
       interval: 10s
@@ -16,3 +40,7 @@ services:
 
 volumes:
   qdrant_storage:
+
+networks:
+  shared:
+    name: checa-ai-ml-shared
