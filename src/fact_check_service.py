@@ -96,6 +96,7 @@ _NARRATIVE_LIMIT = 500
 _REPLY_FIXED_RESERVE = 350
 _MIN_NARRATIVE_CHARS = 80
 _CITATION_PATTERN = re.compile(r"\[(\d+)\]")
+_CHUNK_CITATION_PATTERN = re.compile(r"\[(\d+),\s*trecho\s+\d+\]", re.IGNORECASE)
 
 
 class VerificationGenerationError(RuntimeError):
@@ -309,6 +310,7 @@ class FactCheckService:
                 f"Responda apenas com o texto reduzido.\n\n{narrative}"
             )
             narrative = self._call_llm(system_prompt, condensation_prompt)
+        narrative = _CHUNK_CITATION_PATTERN.sub(r"[\1]", narrative)
         if len(narrative) > narrative_limit:
             raise VerificationGenerationError("contranarrativa excede o tamanho permitido")
 

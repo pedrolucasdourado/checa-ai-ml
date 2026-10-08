@@ -140,7 +140,19 @@ def test_v1_matched_returns_only_cited_sources(service):
     assert [source["url"] for source in result["sources"]] == ["https://g1.globo.com/b"]
 
 
-@pytest.mark.parametrize("bad_output", ["Afirmação [3].", "Afirmação sem citação."])
+def test_v1_normalizes_citation_with_chunk_reference(service):
+    service.hits = [hit("a", 0.90, idx=0), hit("a", 0.88, idx=1), hit("a", 0.85, idx=2)]
+    service._call_llm = lambda system, user: "O laudo esclarece a alegação [1, trecho 3]."
+
+    result = service.verify_claim_for_backend("alegação curta")
+
+    assert result["counter_narrative"] == "O laudo esclarece a alegação [1]."
+    assert [source["url"] for source in result["sources"]] == ["https://g1.globo.com/a"]
+
+
+@pytest.mark.parametrize("bad_output", [
+    "Afirmação [3].", "Afirmação [3, trecho 1].", "Afirmação sem citação.",
+])
 def test_v1_rejects_fabricated_citations(service, bad_output):
     service.hits = [hit("a", 0.90), hit("b", 0.85)]
     service._call_llm = lambda system, user: bad_output
