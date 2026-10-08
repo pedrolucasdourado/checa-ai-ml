@@ -1,0 +1,35 @@
+name: Prompts → Langfuse (staging)
+
+# Merge na main com prompt alterado → publica a nova versão com label "staging".
+# Idempotente: se o texto não mudou, não cria versão. NÃO toca em "production".
+on:
+  push:
+    branches: [main]
+    paths:
+      - src/rag/prompts.py
+  workflow_dispatch:
+
+concurrency:
+  group: prompts-sync
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      LANGFUSE_PUBLIC_KEY: ${{ secrets.LANGFUSE_PUBLIC_KEY }}
+      LANGFUSE_SECRET_KEY: ${{ secrets.LANGFUSE_SECRET_KEY }}
+      LANGFUSE_BASE_URL: ${{ vars.LANGFUSE_BASE_URL || 'https://cloud.langfuse.com' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+          cache-dependency-path: requirements-ci.txt
+      - run: pip install -r requirements-ci.txt
+      - run: python scripts/sync_prompts.py --label staging

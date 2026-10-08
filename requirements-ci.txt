@@ -1,0 +1,15 @@
+# Dependências mínimas do CI (sem torch/sentence-transformers/jupyter).
+pytest
+pydantic
+fastapi
+httpx
+jinja2
+uvicorn
+openai
+langfuse>=4,<5
+qdrant-client
+python-dotenv
+pandas
+numpy
+scikit-learn
+tqdm
