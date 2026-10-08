@@ -8,6 +8,16 @@
 
 ---
 
+<div align="center">
+  <img src="assets/logo.png" alt="Logo do checa-ai" width="320" />
+
+  # Checa AI - Machine Learning Model
+
+  Este repositório contém a inteligência por trás do **Checa AI**. Aqui é onde desenvolvemos, treinamos e versionamos os modelos de Machine Learning que são consumidos pelo [checa-ai-backend](https://github.com/pedrolucasdourado/checa-ai-backend).
+</div>
+
+---
+
 ## Objetivo
 
 O objetivo deste módulo é fornecer um sistema inteligente de **verificação automática de fatos e geração de contranarrativas** para o combate à desinformação no Brasil. O Checa-AI atua como o "cérebro" da aplicação, combinando recuperação de informação vetorial (Retrieval-Augmented Generation — RAG) com modelos de linguagem generativos para produzir respostas fundamentadas em evidências jornalísticas reais.
@@ -21,21 +31,28 @@ O sistema implementa a arquitetura **RAG** (Lewis et al., 2020), que combina um 
 1. **Alucinação factual**: LLMs podem gerar informações plausíveis mas falsas. Ao ancorar a geração em documentos recuperados de fontes jornalísticas verificadas, o sistema garante **grounding factual**.
 2. **Conhecimento desatualizado**: O corpus de checagens é atualizado independentemente do modelo, permitindo cobertura de desinformação recente sem re-treinamento.
 
-### Sentence Embeddings e Busca Semântica
+### Embeddings e Busca Semântica
 
-O módulo de recuperação utiliza o modelo **paraphrase-multilingual-mpnet-base-v2** (Reimers & Gurevych, 2019), um Sentence-BERT (SBERT) treinado com aprendizado contrastivo para gerar representações vetoriais densas (768 dimensões) de sentenças. Diferentemente de abordagens baseadas em TF-IDF ou BM25, os embeddings capturam **similaridade semântica** — permitindo que a query *"estão jogando fora cédulas de votação"* recupere checagens sobre fraude eleitoral mesmo sem correspondência lexical exata.
+O módulo de recuperação suporta múltiplos provedores de embeddings para flexibilidade entre performance e privacidade:
+
+- **OpenAI (Padrão)**: Utiliza o modelo `text-embedding-3-small` (1536 dimensões), oferecendo alta performance sem a necessidade de infraestrutura de GPU local.
+- **Sentence-BERT (Local)**: Utiliza o modelo `paraphrase-multilingual-mpnet-base-v2` (768 dimensões), permitindo a execução totalmente local e privada.
 
 Os vetores são normalizados via **L2-normalization**, o que transforma a distância cosseno em produto escalar, otimizando a busca por similaridade no Qdrant.
 
-### Clusterização Temática via BERTopic
+### Chunking e Estratégia de Recuperação
 
-Para análise exploratória e identificação de narrativas dominantes, empregamos o **BERTopic** (Grootendorst, 2022), que combina:
+Para lidar com documentos extensos e melhorar a precisão da recuperação, implementamos:
 
-- **UMAP** para redução de dimensionalidade dos embeddings
-- **HDBSCAN** para clusterização hierárquica baseada em densidade
-- **c-TF-IDF** (class-based TF-IDF) para extração de descritores temáticos por cluster
+- **Multi-language Chunking**: Divisão de textos em fragmentos menores com *overlap*, garantindo que o contexto semântico não seja perdido nas bordas dos chunks.
+- **Cluster-aware Retrieval**: Um sistema de re-ranking que utiliza a clusterização temática para ajustar o score de similaridade. Documentos pertencentes a clusters "aprovados" ou de "alta confiança" recebem bônus, enquanto clusters ruidosos são penalizados.
 
-Essa pipeline permitiu a descoberta automática de eixos temáticos como **Saúde/Covid-19**, **Sistema Eleitoral**, **Política Nacional** e **Meio Ambiente** — insumos para a futura implementação de agentes especializados por domínio.
+### Silver Dataset Clustering
+
+Para análise exploratória e melhoria da recuperação, empregamos o **BERTopic** (Grootendorst, 2022), que combina UMAP, HDBSCAN e c-TF-IDF. Desenvolvemos um fluxo de dados em camadas:
+
+1. **Bronze Dataset**: O corpus bruto de laudos extraídos e indexados.
+2. **Silver Dataset**: Um subconjunto refinado onde clusters temáticos são identificados e curados humanamente, permitindo que o sistema priorize narrativas validadas.
 
 ### Técnica de Prompt: Truth Sandwich
 
@@ -46,7 +63,13 @@ A geração de contranarrativas segue o framework **Truth Sandwich** (Lakoff, 20
 3. **Apresenta as evidências** que refutam a alegação
 4. **Reafirma o fato** com a fonte oficial
 
-Essa estrutura evita o *efeito de familiaridade* (illusory truth effect), onde a repetição excessiva do boato acaba por reforçá-lo na memória do leitor.
+### Roadmap: Segurança e Guardrails
+
+Para garantir a robustez do sistema, temos planejado a implementação de camadas de **Safety Guardrails**. O objetivo é assegurar que a IA não gere conteúdo ofensivo, enviesado ou que amplifique acidentalmente a desinformação. O plano inclui:
+
+- **Filtros de Entrada**: Integração com APIs de moderação para bloquear prompts tóxicos ou tentativas de *prompt injection*.
+- **Validação de Saída**: Scanners de segurança para validar a contranarrativa gerada antes de exibi-la ao usuário.
+- **Respostas de Recusa Seguras**: Fluxos de fallback para quando o sistema detectar que a query viola as diretrizes de segurança.
 
 ## Arquitetura do Pipeline
 
@@ -54,40 +77,35 @@ Essa estrutura evita o *efeito de familiaridade* (illusory truth effect), onde a
 ┌──────────────────────────────────────────────────────────────────────┐
 │                        PIPELINE RAG — CHECA-AI                       │
 │                                                                      │
-│  ┌─────────────┐    ┌──────────────┐    ┌────────────────────────┐   │
-│  │  FakeRecogna │    │   Scraper    │    │   fact_checks_*.jsonl  │   │
-│  │   (.xlsx)    │───▶│ trafilatura  │───▶│  Laudos jornalísticos  │   │
-│  │  12k linhas  │    │ + bs4        │    │  limpos + metadados    │   │
-│  └─────────────┘    └──────────────┘    └───────────┬────────────┘   │
-│                                                     │                │
-│                                          ┌──────────▼──────────┐     │
-│                                          │  Sentence-BERT      │     │
-│                                          │  mpnet-base-v2      │     │
-│                                          │  768d, norm. L2     │     │
-│                                          └──────────┬──────────┘     │
-│                                                     │                │
-│                                          ┌──────────▼──────────┐     │
-│                                          │  Qdrant (local)     │     │
-│                                          │  fact_checks_pt     │     │
-│                                          │  COSINE similarity  │     │
-│                                          └──────────┬──────────┘     │
-│                                                     │                │
-│  ┌──────────────┐              ┌────────────────────▼──────────┐     │
-│  │  Boato       │  embedding   │   Busca Semântica (Top-K)     │     │
-│  │  (WhatsApp)  │─────────────▶│   score ≥ 0.55 → gerar       │     │
-│  └──────────────┘              │   score < 0.55 → abstinência  │     │
-│                                └────────────────────┬──────────┘     │
-│                                                     │                │
-│                                          ┌──────────▼──────────┐     │
-│                                          │  GPT-4o-mini        │     │
-│                                          │  Truth Sandwich      │     │
-│                                          │  temp=0.2, grounded  │     │
-│                                          └──────────┬──────────┘     │
-│                                                     │                │
-│                                          ┌──────────▼──────────┐     │
-│                                          │  Contranarrativa    │     │
-│                                          │  + Fonte oficial    │     │
-│                                          └─────────────────────┘     │
+│  ┌─────────────┐    ┌──────────────┐    ┌──────────────┐    ┌───────┐│
+│  │  Datasets    │───▶│  Scraper/    │───▶│  Bronze DB    │───▶│ Silver││
+│  │  (Raw/XLSX)  │    │  Cleaning    │    │ (Qdrant/JSON) │    │ Dataset││
+│  └─────────────┘    └──────────────┘    └───────┬────────┘    └───┬───┘│
+│                                                  │                │   │
+│                                    ┌─────────────▼──────────┐     │   │
+│                                    │  Chunking & Embedding   │◀────┘   │
+│                                    │  (OpenAI / Local SBERT)│         │
+│                                    └─────────────┬──────────┘       │
+│                                                  │                   │
+│                                    ┌─────────────▼──────────┐        │
+│                                    │  Qdrant Vector Store   │        │
+│                                    │  (Similarity Search)    │        │
+│                                    └─────────────┬──────────┘       │
+│                                                  │                   │
+│  ┌──────────────┐              ┌───────────────▼───────────┐           │
+│  │  Boato       │  embedding   │   Cluster-aware Re-rank  │           │
+│  │  (Query)     │─────────────▶│   (Top-K + Cluster Bonus)│           │
+│  └──────────────┘              └───────────────┬────────────┘           │
+│                                                │                      │
+│                                    ┌───────────▼────────────┐        │
+│                                    │  GPT-4o-mini (Generator)│        │
+│                                    │  Truth Sandwich Prompt  │        │
+│                                    └───────────┬────────────┘         │
+│                                                │                      │
+│                                    ┌───────────▼────────────┐        │
+│                                    │  Contranarrativa Final  │        │
+│                                    │  + Fontes Verificadas  │        │
+│                                    └─────────────────────────┘        │
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -111,33 +129,39 @@ Realizamos uma auditoria rigorosa nos datasets para garantir a qualidade do trei
 ├── app.py                  # Servidor FastAPI (rotas HTML + API REST)
 ├── data/
 │   ├── raw/                # Datasets originais (FakeRecogna.xlsx)
-│   ├── processed/          # Laudos extraídos (fact_checks_*.jsonl)
-│   └── qdrant_db/          # Índice vetorial Qdrant persistente (local)
+│   ├── interim/            # Dados em processamento (Silver Dataset)
+│   ├── processed/          # Laudos extraídos e limpos
+│   └── qdrant_db/          # Índice vetorial Qdrant persistente
 ├── scripts/
-│   ├── scrape_fact_checks.py   # Scraper de laudos via trafilatura/bs4
-│   ├── ingest_to_qdrant.py     # Ingestão e indexação vetorial no Qdrant
-│   ├── generate_debunk.py      # Pipeline RAG standalone (CLI)
-│   └── cluster_topics.py       # Clusterização temática (BERTopic)
+│   ├── scrape_fact_checks.py   # Scraper de laudos jornalísticos
+│   ├── ingest_to_qdrant.py     # Indexação vetorial no Qdrant
+│   ├── build_silver_dataset.py # Pipeline de criação do Silver Dataset
+│   ├── cluster_topics.py       # Clusterização temática (BERTopic)
+│   ├── curate_silver_clusters.py # Ferramenta de curadoria de clusters
+│   ├── evaluate_retrieval.py   # Avaliação de performance do Retriever
+│   └── generate_debunk.py      # Pipeline RAG standalone (CLI)
 ├── src/
-│   ├── fact_check_service.py   # Serviço RAG (Singleton: Qdrant + LLM)
-│   ├── data/                   # Scripts de ingestão e limpeza
+│   ├── config.py               # Configuração centralizada do projeto
+│   ├── fact_check_service.py   # Orquestrador do serviço RAG
+│   ├── rag/                    # Core do sistema de recuperação
+│   │   ├── chunking.py         # Lógica de fragmentação de texto
+│   │   ├── embeddings.py       # Abstração de provedores (OpenAI/Local)
+│   │   ├── qdrant.py           # Interface de comunicação com Qdrant
+│   │   ├── retriever.py         # Lógica de busca e re-ranking
+│   │   └── preprocessing.py    # Limpeza e normalização de texto
+│   ├── data/                   # Utilitários de manipulação de dados
 │   ├── features/               # Engenharia de features
-│   ├── models/                 # Scripts de treinamento e inferência
-│   └── visualization/          # Visualização de dados
-├── static/
-│   ├── css/debunk.css          # Design system (dark glassmorphism)
-│   └── js/debunk.js            # Frontend: POST → resultado renderizado
-├── templates/
-│   ├── components/sidebar.html # Sidebar de navegação
-│   └── pages/debunk.html       # Interface de verificação de boatos
-├── notebooks/              # Jupyter Notebooks (EDA, prototipagem)
-├── exploration/            # Análises exploratórias comparativas
-├── docs/                   # Documentação do modelo e experimentos
-├── models/                 # Modelos treinados e serializados
-├── reports/                # Relatórios de performance e métricas
-├── references/             # Dicionários de dados e referências bibliográficas
-├── requirements.txt        # Dependências do projeto
-└── .env                    # Variáveis de ambiente (OPENAI_API_KEY)
+│   ├── models/                 # Modelos de ML e inferência
+│   └── visualization/          # Ferramentas de visualização
+├── static/                     # Assets de frontend (CSS/JS)
+├── templates/                  # Templates Jinja2 (HTML)
+├── notebooks/                  # Jupyter Notebooks (EDA e Prototipagem)
+├── specs/                      # Especificações técnicas (ex: Safety Guardrails)
+├── docs/                       # Documentação técnica e fluxos
+├── models/                     # Artefatos de modelos serializados
+├── references/                 # Referências bibliográficas e dicionários
+├── requirements.txt            # Dependências do projeto
+└── .env                        # Variáveis de ambiente
 ```
 
 ## Como Executar
@@ -150,25 +174,29 @@ source .venv/bin/activate
 
 # Instale as dependências
 pip install -r requirements.txt
-pip install trafilatura beautifulsoup4 sentence-transformers qdrant-client openai python-dotenv bertopic
 ```
 
 ### 2. Configuração
 Crie o arquivo `.env` na raiz do projeto:
 ```bash
 OPENAI_API_KEY=sk-...
+EMBEDDING_PROVIDER=openai  # Opções: 'openai' ou 'local'
 ```
 
-### 3. Pipeline de Dados
+### 3. Pipeline de Dados (Fluxo Recomendado)
 ```bash
 # Etapa 1 — Extrair laudos jornalísticos das URLs do FakeRecogna
 python scripts/scrape_fact_checks.py --batch 2000
 
-# Etapa 2 — Indexar os laudos no Qdrant (vetorização com Sentence-BERT)
+# Etapa 2 — Indexar os laudos no Qdrant (Bronze Dataset)
 python scripts/ingest_to_qdrant.py --input data/processed/fact_checks_full.jsonl
 
-# Etapa 3 — (Opcional) Análise de clusters temáticos
-python scripts/cluster_topics.py --input data/processed/fact_checks_full.jsonl
+# Etapa 3 — Gerar clusters temáticos e construir o Silver Dataset
+python scripts/build_silver_dataset.py
+
+# Etapa 4 — (Opcional) Curar clusters e avaliar a recuperação
+python scripts/curate_silver_clusters.py
+python scripts/evaluate_retrieval.py
 ```
 
 ### 4. Servidor Web

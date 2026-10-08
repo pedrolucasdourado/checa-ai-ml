@@ -84,3 +84,7 @@ CLUSTER_HIGH_CONFIDENCE_BONUS = _env_float("CLUSTER_HIGH_CONFIDENCE_BONUS", 0.00
 # ─── LLM ─────────────────────────────────────────────────────────────
 LLM_MODEL = os.environ.get("LLM_MODEL", "gpt-4o-mini")
 LLM_TEMPERATURE = _env_float("LLM_TEMPERATURE", 0.2)
+
+# ─── Safety Guardrails ───────────────────────────────────────────────
+SAFE_REFUSAL_MESSAGE = "Desculpe, mas não posso processar esta solicitação porque ela viola nossas diretrizes de segurança e moderação."
+SAFE_INJECTION_REFUSAL_MESSAGE = "Detectamos uma tentativa de contornar as instruções do sistema. Por favor, envie a alegação que deseja verificar."
