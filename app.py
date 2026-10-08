@@ -20,6 +20,8 @@ import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
 
+from anyio import to_thread
+
 try:
     from dotenv import load_dotenv
     load_dotenv()
@@ -35,6 +37,7 @@ from pydantic import BaseModel, Field
 # Garante que src/ está no path quando rodando da raiz do projeto
 sys.path.insert(0, str(Path(__file__).parent))
 from src.fact_check_service import FactCheckService
+from src.api.v1 import router as v1_router
 
 log = logging.getLogger("checa-ai")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s  %(levelname)-8s %(message)s")
@@ -48,7 +51,7 @@ TEMPLATES  = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 async def lifespan(app: FastAPI):
     log.info("🚀 Checa-AI startup — carregando FactCheckService…")
     try:
-        FactCheckService.get_instance()
+        await to_thread.run_sync(FactCheckService.get_instance)
         log.info("✅ FactCheckService pronto.")
     except Exception as exc:
         log.error("❌ Falha ao inicializar FactCheckService: %s", exc)
@@ -63,6 +66,8 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan,
 )
+
+app.include_router(v1_router)
 
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 
