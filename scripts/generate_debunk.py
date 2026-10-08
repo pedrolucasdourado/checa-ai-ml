@@ -49,46 +49,13 @@ from src.config import (  # noqa: E402
     SIMILARITY_THRESHOLD as DEFAULT_THRESHOLD,   # limiar de abstinência
 )
 from src.rag.embeddings import EmbeddingProvider, get_embedding_provider  # noqa: E402
+from src.rag.prompts import load_prompt  # noqa: E402
 from src.rag.qdrant import get_qdrant_client  # noqa: E402
 DEFAULT_QUERY = (
     "Hackers invadiram o TSE e transformaram as justificativas em votos válidos"
 )
 
-# ─────────────────────── Prompt Template ─────────────────────────────
-SYSTEM_PROMPT = """\
-Você é um verificador de fatos especializado em combate à desinformação no Brasil.
-Sua missão é redigir contranarrativas curtas, didáticas e embasadas em evidências \
-jornalísticas reais para serem compartilhadas via WhatsApp ou redes sociais.
-
-Regras estritas:
-1. COMECE sempre afirmando o FATO verídico logo na primeira frase (Truth Sandwich).
-2. Em seguida, mencione brevemente a alegação falsa circulando — sem amplificá-la.
-3. Use APENAS as evidências contidas no "Laudo de Checagem" fornecido. \
-PROIBIDO inventar dados, estatísticas ou declarações não presentes no laudo.
-4. Tom: cortês, claro, direto e acessível — adequado para leigos.
-5. Comprimento: 3 a 5 parágrafos curtos. Sem markdown, sem bullets, só texto corrido.
-6. Finalize com a linha exata:
-   "Fonte: {dominio} — Leia mais em: {url}"
-   (substitua pelas variáveis reais do laudo)
-"""
-
-USER_PROMPT_TEMPLATE = """\
---- ALEGAÇÃO RECEBIDA ---
-{query}
-
---- LAUDO DE CHECAGEM RECUPERADO ---
-Título da matéria: {titulo}
-Agência checadora: {dominio}
-Data de publicação: {data_publicacao}
-URL da checagem: {url}
-
-Texto integral do laudo:
-{texto_completo}
-
---- TAREFA ---
-Com base EXCLUSIVAMENTE no laudo acima, redija uma contranarrativa clara e \
-fundamentada para desmentir a alegação recebida. Siga as regras do sistema.
-"""
+# O prompt vive em src/rag/prompts.py (versionado no Langfuse), compartilhado com a API.
 
 
 # ──────────────────────────── Funções ─────────────────────────────────
@@ -114,21 +81,18 @@ def retrieve(
 
 
 def build_prompt(query: str, hit) -> tuple[str, str]:
-    """Retorna (system_prompt, user_prompt) com os dados do hit injetados."""
+    """Retorna (system_prompt, user_prompt) com o hit injetado como evidência [1]."""
     p = hit.payload
-    user = USER_PROMPT_TEMPLATE.format(
-        query=query,
-        titulo=p.get("titulo", ""),
-        dominio=p.get("dominio", ""),
-        data_publicacao=p.get("data_publicacao", ""),
-        url=p.get("url", ""),
-        texto_completo=p.get("texto_chunk") or p.get("texto_completo", ""),
+    contexto = (
+        "[1]\n"
+        f"Título da matéria: {p.get('titulo', '')}\n"
+        f"Agência checadora: {p.get('dominio', '')}\n"
+        f"Data de publicação: {p.get('data_publicacao', '')}\n"
+        f"URL da checagem: {p.get('url', '')}\n"
+        f"Texto do laudo:\n{p.get('texto_chunk') or p.get('texto_completo', '')}"
     )
-    system = SYSTEM_PROMPT.format(
-        dominio=p.get("dominio", ""),
-        url=p.get("url", ""),
-    )
-    return system, user
+    prompt = load_prompt()
+    return prompt.render_system(), prompt.render_user(query=query, contexto=contexto)
 
 
 def call_llm(system: str, user: str, model: str, temperature: float) -> str:

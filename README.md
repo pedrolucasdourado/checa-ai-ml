@@ -202,13 +202,29 @@ verify-claim            (trace: latência total, session, tags, prompt_version)
 | Latência | duração de cada span (embedding, busca, LLM) e do trace |
 | Feedback do usuário | botões 👍/👎 → `POST /api/feedback` → score `user_feedback` no trace |
 | Qualidade online | scores automáticos: `top_similarity`, `abstained`, `sources_grounded` (URL citada que não veio dos laudos = alucinação de link) |
-| Versão do prompt | `src/rag/prompts.py` (`PROMPT_VERSION`); filtre por tag `prompt:<versão>` |
+| Versão do prompt | Langfuse Prompt Management (`debunk@<n>`); cada generation fica ligada à versão; filtre por tag `prompt:<versão>` |
 
 **Configuração:** copie `.env.example` para `.env` e preencha `LANGFUSE_PUBLIC_KEY`,
 `LANGFUSE_SECRET_KEY` e `LANGFUSE_BASE_URL`. Sem as chaves o tracing é desligado e nada muda no pipeline.
 Com `LANGFUSE_CAPTURE_CONTENT=false` o texto dos usuários não é enviado (só métricas e metadados).
 
-> Ao mudar o texto de um prompt, incremente `PROMPT_VERSION`. Ao trocar `LLM_MODEL`, confira
+### Gestão de prompts
+
+`src/rag/prompts.py` é o módulo único de prompts (usado pela API e por `scripts/generate_debunk.py`).
+Em runtime o prompt `debunk` é lido do **Langfuse Prompt Management** pelo label `PROMPT_LABEL`
+(`production` por padrão; use `staging` para testar), com cache do SDK. Se o Langfuse ou o prompt
+estiverem indisponíveis, o texto local do módulo é usado como fallback.
+
+```bash
+python scripts/sync_prompts.py                    # publica o texto local como nova versão (label staging)
+python scripts/sync_prompts.py --label production # ou direto em produção
+```
+
+Editar o prompt no Langfuse (ou rodar o sync) cria uma nova versão sem redeploy; **rollback** = mover
+o label `production` para a versão anterior. Variáveis usam `{{query}}` e `{{contexto}}`.
+Se mudar o texto local, incremente `PROMPT_VERSION`.
+
+> Ao trocar `LLM_MODEL`, confira
 > em Langfuse > Settings > Models se o preço do modelo está cadastrado (senão o custo fica vazio).
 
 ## Tecnologias Utilizadas
