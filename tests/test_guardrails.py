@@ -98,3 +98,12 @@ def test_service_sanitizes_llm_output(service, monkeypatch):
     r = service.verify_claim("boato")
     assert "fake.example" not in r["counter_narrative"]
     assert r["guardrails"]["ungrounded_urls"] == ["https://fake.example/x"]
+
+
+def test_model_abstention_when_laudos_do_not_cover_claim(service, monkeypatch):
+    service.hits = [_hit("a", "Laudo sobre outro assunto.")]
+    raw = json.dumps({"laudos_tratam_alegacao": False, "texto": "Sem checagem.", "fontes_usadas": []})
+    monkeypatch.setattr(service, "_call_llm", lambda s, u: raw, raising=False)
+    r = service.verify_claim("boato")
+    assert r["status"] == "abstained" and r["abstained_by"] == "model"
+    assert r["counter_narrative"] == fcs._ABSTENTION_MESSAGE
