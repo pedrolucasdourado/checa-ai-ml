@@ -40,6 +40,7 @@ from src.rag.retriever import (
     unique_sources,
     with_cluster_rerank,
 )
+from src.rag.web_search import perform_web_search
 from src.safety.moderation import check_moderation
 from src.safety.injection import check_injection
 from src.safety.validator import validate_output
@@ -174,6 +175,63 @@ class FactCheckService:
         )
         return resp.choices[0].message.content.strip()
 
+    def _deep_search_fallback(self, query: str, score: float, evidences: list[Evidence]) -> dict:
+        """
+        Fallback quando não há match no RAG: pesquisa na web e sintetiza a resposta.
+        """
+        from src.config import DEEP_SEARCH_SYSTEM_PROMPT, DEEP_SEARCH_USER_PROMPT
+
+        logger.info("Iniciando DeepSearch para query: %s", query)
+        
+        # 1. Busca Web
+        web_results = perform_web_search(query)
+        logger.info("Resultados da web encontrados: %d", len(web_results))
+        
+        if not web_results:
+            # Se nem a web retornou nada, voltamos para a abstenção clássica
+            return self._abstention(score, evidences)
+
+        # Formata resultados para o prompt
+        formatted_results = "\n\n".join([
+            f"Fonte: {r['title']} ({r['url']})\nConteúdo: {r['snippet']}" 
+            for r in web_results
+        ])
+        
+        # DEBUG: Print dos resultados reais da web para transparência
+        logger.info("--- RESULTADOS REAIS DA WEB ---\n%s\n--------------------------------", formatted_results)
+        
+        user_prompt = DEEP_SEARCH_USER_PROMPT.format(
+            query=query, 
+            web_results=formatted_results
+        )
+        
+        # 2. Geração de síntese cautelosa
+        try:
+            narrative = self._call_llm(DEEP_SEARCH_SYSTEM_PROMPT, user_prompt)
+        except Exception as e:
+            logger.error("Erro ao gerar síntese DeepSearch: %s", e)
+            return self._abstention(score, evidences)
+
+        # 3. Validação de Segurança (Saída)
+        val_result = validate_output(narrative)
+        if not val_result.is_safe:
+            logger.error("Blocked harmful deep search output: category=%s", val_result.category)
+            return {
+                "status": "blocked",
+                "score": None,
+                "evidence": None,
+                "sources": [],
+                "counter_narrative": "Desculpe, mas a pesquisa web gerou um conteúdo que não atende aos nossos critérios de segurança.",
+            }
+
+        return {
+            "status": "deep_searched",
+            "score": round(score, 4),
+            "evidence": None,
+            "sources": [], # Em um sistema real, poderíamos adicionar as URLs da web aqui
+            "counter_narrative": narrative,
+        }
+
     # ─── Public API ───────────────────────────────────────────────────
     @staticmethod
     def _abstention(score: float, evidences: list[Evidence]) -> dict:
@@ -227,11 +285,11 @@ class FactCheckService:
         evidences = self._retrieve(user_message)
 
         if not evidences:
-            return self._abstention(0.0, [])
+            return self._deep_search_fallback(user_message, 0.0, [])
 
         best_score = max(ev.score for ev in evidences)
         if best_score < SIMILARITY_THRESHOLD:
-            return self._abstention(best_score, evidences)
+            return self._deep_search_fallback(user_message, best_score, evidences)
 
         # 4. Generation
         contexto, used = build_context(evidences, MAX_CONTEXT_CHARS)
