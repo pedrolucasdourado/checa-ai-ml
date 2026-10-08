@@ -280,7 +280,7 @@ def test_load_prompt_ignores_fallback_object(lf):
 def test_deep_search_generation_is_not_linked_to_debunk_prompt(service, monkeypatch):
     seen = {}
     monkeypatch.setattr(fcs, "perform_web_search", lambda q, max_results=5: [{"title": "t", "snippet": "s", "url": "https://w.example"}])
-    service._call_llm = lambda s, u: seen.update(bundle=prompts.current_prompt.get()) or "síntese"
+    service._call_llm_text = lambda s, u: seen.update(bundle=prompts.current_prompt.get()) or "síntese"
     service.hits = [_hit("a", fcs.SIMILARITY_THRESHOLD - 0.05)]
     assert service.verify_claim("alegação qualquer")["status"] == "deep_searched"
     assert seen["bundle"] is None

@@ -16,3 +16,5 @@ def offline_safety_and_web(monkeypatch):
     monkeypatch.setattr(fcs, "check_moderation", lambda text: ModerationResult(is_safe=True))
     monkeypatch.setattr(fcs, "validate_output", lambda text: ModerationResult(is_safe=True))
     monkeypatch.setattr(fcs, "perform_web_search", lambda query, max_results=5: [])
+    # Síntese do DeepSearch nunca chama a OpenAI nos testes.
+    monkeypatch.setattr(fcs.FactCheckService, "_call_llm_text", lambda self, s, u: "Síntese de teste.")
