@@ -45,7 +45,7 @@ from src.rag.embeddings import EmbeddingProvider, get_embedding_provider
 from src.rag.qdrant import get_qdrant_client
 
 # ─── Configurações padrão ─────────────────────────────────────────────
-DEFAULT_INPUT   = Path("data/processed/fact_checks_all.jsonl")
+DEFAULT_INPUT   = Path("data/processed/fact_checks_silver.jsonl")
 DEFAULT_DB_PATH = QDRANT_PATH
 BATCH_SIZE      = 32
 EMBED_BATCH_SIZE = 100

@@ -20,7 +20,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 from src.rag.preprocessing import build_silver_records
 
 
-DEFAULT_INPUT = Path("data/processed/fact_checks_all.jsonl")
+DEFAULT_INPUT = Path("data/processed/fact_checks_clean.jsonl")
 DEFAULT_OUTPUT = Path("data/processed/fact_checks_silver.jsonl")
 DEFAULT_REPORT = Path("reports/silver/fact_checks_silver_report.json")
 

@@ -2,19 +2,19 @@
 src/fact_check_service.py
 ─────────────────────────────────────────────────────────────────────
 Serviço de verificação de fatos via pipeline RAG:
-  1. Converte a mensagem do usuário em embedding (sentence-transformers)
-  2. Busca no Qdrant os chunks mais similares (top-k) e deduplica por documento
-  3. Se o melhor score >= limiar, gera contranarrativa via GPT-4o-mini
+  1. Moderação e Guardrails de Entrada (Toxicidade e Injection)
+  2. Converte a mensagem do usuário em embedding (sentence-transformers)
+  3. Busca no Qdrant os chunks mais similares (top-k) e deduplica por documento
+  4. Se o melhor score >= limiar, gera contranarrativa via GPT-4o-mini
      usando múltiplas evidências numeradas
-  4. Caso contrário, retorna abstinência
-
-Singleton por processo: o modelo e o cliente Qdrant são carregados
-apenas uma vez no startup do servidor.
+  5. Validação de Guardrails de Saída
+  6. Caso contrário, retorna abstinência
 """
 
 from __future__ import annotations
 
 import os
+import logging
 
 from src.config import (
     COLLECTION_NAME,
@@ -27,6 +27,8 @@ from src.config import (
     RETRIEVAL_OVERFETCH,
     RETRIEVAL_TOP_K,
     SIMILARITY_THRESHOLD,
+    SAFE_REFUSAL_MESSAGE,
+    SAFE_INJECTION_REFUSAL_MESSAGE,
 )
 from src.rag.embeddings import get_embedding_provider
 from src.rag.qdrant import get_qdrant_client
@@ -38,6 +40,13 @@ from src.rag.retriever import (
     unique_sources,
     with_cluster_rerank,
 )
+from src.safety.moderation import check_moderation
+from src.safety.injection import check_injection
+from src.safety.validator import validate_output
+
+# Configure logging for safety events
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("checa-ai.safety")
 
 # ─── Prompt Templates ────────────────────────────────────────────────
 _SYSTEM_PROMPT = """\
@@ -179,17 +188,42 @@ class FactCheckService:
 
     def verify_claim(self, user_message: str) -> dict:
         """
-        Executa o pipeline RAG completo.
+        Executa o pipeline RAG completo com camadas de segurança.
 
         Retorno:
             {
-                "status":            "matched" | "abstained",
-                "score":             float,            # melhor score entre os chunks
-                "evidence":          dict | None,      # melhor fonte (compatibilidade)
-                "sources":           list[dict],       # uma entrada por documento
+                "status":            "matched" | "abstained" | "blocked",
+                "score":             float | None,
+                "evidence":          dict | None,
+                "sources":           list[dict],
                 "counter_narrative": str,
             }
         """
+        # 1. Input Guardrail: Moderation (Toxicity)
+        mod_result = check_moderation(user_message)
+        if not mod_result.is_safe:
+            logger.warning(f"Blocked toxic input: category={mod_result.category}")
+            return {
+                "status": "blocked",
+                "score": None,
+                "evidence": None,
+                "sources": [],
+                "counter_narrative": SAFE_REFUSAL_MESSAGE,
+            }
+
+        # 2. Input Guardrail: Prompt Injection
+        inj_result = check_injection(user_message)
+        if not inj_result.is_safe:
+            logger.warning(f"Blocked injection attempt: pattern={inj_result.pattern}")
+            return {
+                "status": "blocked",
+                "score": None,
+                "evidence": None,
+                "sources": [],
+                "counter_narrative": SAFE_INJECTION_REFUSAL_MESSAGE,
+            }
+
+        # 3. RAG Retrieval
         evidences = self._retrieve(user_message)
 
         if not evidences:
@@ -199,12 +233,26 @@ class FactCheckService:
         if best_score < SIMILARITY_THRESHOLD:
             return self._abstention(best_score, evidences)
 
+        # 4. Generation
         contexto, used = build_context(evidences, MAX_CONTEXT_CHARS)
         user_prompt = _USER_PROMPT.format(query=user_message, contexto=contexto)
 
         counter_narrative = self._call_llm(_SYSTEM_PROMPT, user_prompt)
-        sources = unique_sources(used)
 
+        # 5. Output Guardrail: Safety Validation
+        val_result = validate_output(counter_narrative)
+        if not val_result.is_safe:
+            logger.error(f"Blocked harmful output: category={val_result.category}")
+            # In case of harmful output, we return a fallback refusal
+            return {
+                "status": "blocked",
+                "score": round(best_score, 4),
+                "evidence": _evidence_to_dict(used[0]),
+                "sources": [_source_to_dict(s) for s in unique_sources(used)],
+                "counter_narrative": "Desculpe, mas a resposta gerada não atende aos nossos critérios de segurança e não pode ser exibida.",
+            }
+
+        sources = unique_sources(used)
         return {
             "status": "matched",
             "score": round(best_score, 4),
