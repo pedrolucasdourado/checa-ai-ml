@@ -8,16 +8,6 @@
 
 ---
 
-<div align="center">
-  <img src="assets/logo.png" alt="Logo do checa-ai" width="320" />
-
-  # Checa AI - Machine Learning Model
-
-  Este repositório contém a inteligência por trás do **Checa AI**. Aqui é onde desenvolvemos, treinamos e versionamos os modelos de Machine Learning que são consumidos pelo [checa-ai-backend](https://github.com/pedrolucasdourado/checa-ai-backend).
-</div>
-
----
-
 ## Objetivo
 
 O objetivo deste módulo é fornecer um sistema inteligente de **verificação automática de fatos e geração de contranarrativas** para o combate à desinformação no Brasil. O Checa-AI atua como o "cérebro" da aplicação, combinando recuperação de informação vetorial (Retrieval-Augmented Generation — RAG) com modelos de linguagem generativos para produzir respostas fundamentadas em evidências jornalísticas reais.
@@ -63,13 +53,15 @@ A geração de contranarrativas segue o framework **Truth Sandwich** (Lakoff, 20
 3. **Apresenta as evidências** que refutam a alegação
 4. **Reafirma o fato** com a fonte oficial
 
-### Roadmap: Segurança e Guardrails
+### Segurança e DeepSearch Fallback
 
-Para garantir a robustez do sistema, temos planejado a implementação de camadas de **Safety Guardrails**. O objetivo é assegurar que a IA não gere conteúdo ofensivo, enviesado ou que amplifique acidentalmente a desinformação. O plano inclui:
+Para garantir a robustez e a utilidade do sistema, implementamos camadas de segurança e de busca expandida:
 
-- **Filtros de Entrada**: Integração com APIs de moderação para bloquear prompts tóxicos ou tentativas de *prompt injection*.
-- **Validação de Saída**: Scanners de segurança para validar a contranarrativa gerada antes de exibi-la ao usuário.
-- **Respostas de Recusa Seguras**: Fluxos de fallback para quando o sistema detectar que a query viola as diretrizes de segurança.
+- **Safety Guardrails**:
+    - **Filtros de Entrada**: Integração com APIs de moderação para bloquear prompts tóxicos e detecção de *Prompt Injection* (Suporte a PT/EN).
+    - **Validação de Saída**: Scanner de segurança que valida a resposta do LLM antes de exibi-la ao usuário.
+    - **Respostas de Recusa**: Fluxos de fallback para queries que violam as diretrizes de segurança.
+- **DeepSearch Fallback**: Quando o sistema não encontra laudos oficiais no banco (Abstenção), ele dispara automaticamente uma busca na web via **Tavily AI**. O resultado é sintetizado de forma neutra, sem dar veredito de fato/fake, e finaliza com um aviso de pensamento crítico.
 
 ## Arquitetura do Pipeline
 
@@ -139,6 +131,7 @@ Realizamos uma auditoria rigorosa nos datasets para garantir a qualidade do trei
 │   ├── cluster_topics.py       # Clusterização temática (BERTopic)
 │   ├── curate_silver_clusters.py # Ferramenta de curadoria de clusters
 │   ├── evaluate_retrieval.py   # Avaliação de performance do Retriever
+│   ├── agent_cli.py            # CLI Interativo para testes do agente
 │   └── generate_debunk.py      # Pipeline RAG standalone (CLI)
 ├── src/
 │   ├── config.py               # Configuração centralizada do projeto
@@ -148,10 +141,12 @@ Realizamos uma auditoria rigorosa nos datasets para garantir a qualidade do trei
 │   │   ├── embeddings.py       # Abstração de provedores (OpenAI/Local)
 │   │   ├── qdrant.py           # Interface de comunicação com Qdrant
 │   │   ├── retriever.py         # Lógica de busca e re-ranking
+│   │   ├── web_search.py       # Busca web via Tavily AI (Fallback)
 │   │   └── preprocessing.py    # Limpeza e normalização de texto
 │   ├── data/                   # Utilitários de manipulação de dados
 │   ├── features/               # Engenharia de features
 │   ├── models/                 # Modelos de ML e inferência
+│   ├── safety/                 # Camadas de Guardrails (Moderação/Injeção)
 │   └── visualization/          # Ferramentas de visualização
 ├── static/                     # Assets de frontend (CSS/JS)
 ├── templates/                  # Templates Jinja2 (HTML)
@@ -180,6 +175,7 @@ pip install -r requirements.txt
 Crie o arquivo `.env` na raiz do projeto:
 ```bash
 OPENAI_API_KEY=sk-...
+TAVILY_API_KEY=tvly-...
 EMBEDDING_PROVIDER=openai  # Opções: 'openai' ou 'local'
 ```
 
@@ -188,11 +184,11 @@ EMBEDDING_PROVIDER=openai  # Opções: 'openai' ou 'local'
 # Etapa 1 — Extrair laudos jornalísticos das URLs do FakeRecogna
 python scripts/scrape_fact_checks.py --batch 2000
 
-# Etapa 2 — Indexar os laudos no Qdrant (Bronze Dataset)
-python scripts/ingest_to_qdrant.py --input data/processed/fact_checks_full.jsonl
-
-# Etapa 3 — Gerar clusters temáticos e construir o Silver Dataset
+# Etapa 2 — Construir o Silver Dataset (Limpeza e Refinamento)
 python scripts/build_silver_dataset.py
+
+# Etapa 3 — Indexar no Qdrant (Bronze Dataset)
+python scripts/ingest_to_qdrant.py --input data/processed/fact_checks_silver.jsonl
 
 # Etapa 4 — (Opcional) Curar clusters e avaliar a recuperação
 python scripts/curate_silver_clusters.py
@@ -209,7 +205,8 @@ uvicorn app:app --reload --port 8000
 
 ### 5. Teste via CLI (sem servidor)
 ```bash
-python scripts/generate_debunk.py --query "Hackers invadiram o TSE e transformaram justificativas em votos"
+# Para testar a orquestração completa (RAG + DeepSearch + Guardrails)
+python scripts/agent_cli.py
 ```
 
 ## Tecnologias Utilizadas
@@ -222,6 +219,7 @@ python scripts/generate_debunk.py --query "Hackers invadiram o TSE e transformar
 | **Vector Store** | Qdrant (modo local) | Indexação e busca por similaridade cosseno |
 | **LLM** | OpenAI GPT-4o-mini | Geração de contranarrativas grounded |
 | **Scraping** | Trafilatura + BeautifulSoup | Extração de texto jornalístico limpo |
+| **Web Search** | Tavily AI | Busca web para fallback de abstenção |
 | **Clusterização** | BERTopic (UMAP + HDBSCAN + c-TF-IDF) | Descoberta de eixos temáticos |
 | **Dados** | Pandas, NumPy, Scikit-learn | Manipulação, EDA e pré-processamento |
 | **Frontend** | HTML + CSS + JavaScript (Vanilla) | Interface dark glassmorphism |
