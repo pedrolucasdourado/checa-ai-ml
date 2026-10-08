@@ -411,9 +411,11 @@ class FactCheckService:
         if not answer.laudos_tratam_alegacao:
             # O próprio modelo sinalizou que os laudos não cobrem a alegação:
             # abstém-se em vez de responder de memória e creditar fonte irrelevante.
-            log.info("Guardrail: modelo se absteve (laudos não tratam da alegação).")
-            result = self._abstention(best_score, used)
-            result["abstained_by"] = "model"
+            logger.info("Guardrail: modelo se absteve (laudos não tratam da alegação).")
+            # Mesmo caminho do score baixo: DeepSearch, ou abstenção se a web não ajudar.
+            result = self._deep_search_fallback(user_message, best_score, used)
+            if result["status"] == "abstained":
+                result["abstained_by"] = "model"
             return result
         counter_narrative, report = enforce_grounding(
             answer, [(s.url, s.dominio) for s in sources], structured

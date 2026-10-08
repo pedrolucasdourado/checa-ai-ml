@@ -90,6 +90,8 @@ def build_service(case: dict) -> fcs.FactCheckService:
     svc = object.__new__(fcs.FactCheckService)
     hits = [_hit(case, ev, i) for i, ev in enumerate(case["evidences"])]
     svc._search = lambda query, limit: hits  # type: ignore[method-assign]
+    # DeepSearch (Tavily) é rede e não determinístico: o eval mede só o RAG.
+    fcs.perform_web_search = lambda query, max_results=5: []
     return svc
 
 
