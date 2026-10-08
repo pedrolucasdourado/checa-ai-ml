@@ -31,9 +31,11 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
+from typing import Literal
 
 # Garante que src/ está no path quando rodando da raiz do projeto
 sys.path.insert(0, str(Path(__file__).parent))
+from src import observability
 from src.fact_check_service import FactCheckService
 
 log = logging.getLogger("checa-ai")
@@ -53,6 +55,7 @@ async def lifespan(app: FastAPI):
     except Exception as exc:
         log.error("❌ Falha ao inicializar FactCheckService: %s", exc)
     yield
+    observability.shutdown()  # envia traces pendentes ao Langfuse
     log.info("🛑 Checa-AI shutdown.")
 
 
@@ -70,6 +73,16 @@ app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="stat
 # ─── Schemas ──────────────────────────────────────────────────────────
 class DebunkRequest(BaseModel):
     message: str = Field(..., min_length=10, description="Texto suspeito a ser verificado")
+    session_id: str | None = Field(
+        default=None, max_length=64, pattern=r"^[A-Za-z0-9_-]+$",
+        description="Agrupa requisições do mesmo visitante no Langfuse",
+    )
+
+
+class FeedbackRequest(BaseModel):
+    trace_id: str = Field(..., pattern=r"^[0-9a-f]{32}$")
+    value: Literal["up", "down"]
+    comment: str | None = Field(default=None, max_length=500)
 
 
 class EvidenceOut(BaseModel):
@@ -94,11 +107,12 @@ class SourceOut(BaseModel):
 
 
 class DebunkResponse(BaseModel):
-    status: str           # "matched" | "abstained"
-    score: float
+    status: str           # "matched" | "abstained" | "deep_searched" | "blocked"
+    score: float | None   # None quando a entrada é bloqueada antes da busca
     evidence: EvidenceOut | None
     sources: list[SourceOut] = []
     counter_narrative: str
+    trace_id: str | None = None   # usado pelo frontend para enviar feedback
 
 
 # ─── Rotas ────────────────────────────────────────────────────────────
@@ -117,7 +131,7 @@ async def debunk_page(request: Request):
 
 
 @app.post("/api/debunk", response_model=DebunkResponse)
-async def api_debunk(body: DebunkRequest):
+def api_debunk(body: DebunkRequest):  # def (não async): roda em threadpool, sem bloquear o loop
     """
     Recebe uma mensagem suspeita e retorna:
     - status: matched (contranarrativa gerada) ou abstained (sem checagem)
@@ -127,7 +141,7 @@ async def api_debunk(body: DebunkRequest):
     """
     try:
         service = FactCheckService.get_instance()
-        result  = service.verify_claim(body.message)
+        result  = service.verify_claim(body.message, session_id=body.session_id)
     except RuntimeError as exc:
         # OPENAI_API_KEY ausente ou outro erro de configuração
         raise HTTPException(status_code=503, detail=str(exc))
@@ -151,7 +165,24 @@ async def api_debunk(body: DebunkRequest):
         evidence=evidence_out,
         sources=[SourceOut(**s) for s in result.get("sources", [])],
         counter_narrative=result["counter_narrative"],
+        trace_id=result.get("trace_id"),
     )
+
+
+@app.post("/api/feedback", status_code=202)
+def api_feedback(body: FeedbackRequest):
+    """Registra 👍/👎 do usuário como score `user_feedback` no trace da resposta."""
+    recorded = observability.score_trace(
+        body.trace_id,
+        "user_feedback",
+        1.0 if body.value == "up" else 0.0,
+        data_type="BOOLEAN",
+        comment=body.comment,
+        idempotent=True,  # reenvio sobrescreve em vez de duplicar
+    )
+    if not recorded:
+        raise HTTPException(status_code=503, detail="Feedback indisponível no momento.")
+    return {"recorded": True}
 
 
 # ─── Healthcheck ──────────────────────────────────────────────────────

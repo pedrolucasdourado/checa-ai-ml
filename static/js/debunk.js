@@ -22,6 +22,38 @@ function fillExample(btn) {
   textarea.focus();
 }
 
+/* ── Sessão anônima (agrupa traces do mesmo visitante no Langfuse) ── */
+function getSessionId() {
+  try {
+    let id = sessionStorage.getItem('checa-session');
+    if (!id) {
+      id = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(36).slice(2))
+        .replace(/[^A-Za-z0-9_-]/g, '');
+      sessionStorage.setItem('checa-session', id);
+    }
+    return id;
+  } catch (_) {
+    return null;
+  }
+}
+
+/* ── Feedback 👍/👎 ───────────────────────────────────────────── */
+async function sendFeedback(traceId, value, btn) {
+  const box = btn.closest('.feedback');
+  box.querySelectorAll('button').forEach(b => { b.disabled = true; });
+  try {
+    const res = await fetch('/api/feedback', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ trace_id: traceId, value }),
+    });
+    box.querySelector('.feedback-status').textContent =
+      res.ok ? 'Obrigado pelo feedback!' : 'Não foi possível enviar o feedback.';
+  } catch (_) {
+    box.querySelector('.feedback-status').textContent = 'Não foi possível enviar o feedback.';
+  }
+}
+
 /* ── Renderização de resultado ──────────────────────────────── */
 function renderResult(data) {
   const area = document.getElementById('result-area');
@@ -87,8 +119,21 @@ function renderResult(data) {
         <p class="section-title">💬 Contranarrativa gerada</p>
         <p class="counter-narrative">${escHtml(data.counter_narrative)}</p>
         ${evidenceBlock}
+        ${data.trace_id
+          ? `<div class="feedback" data-trace="${escHtml(data.trace_id)}">
+               <span>Esta resposta foi útil?</span>
+               <button type="button" data-value="up"   aria-label="Útil">👍</button>
+               <button type="button" data-value="down" aria-label="Não ajudou">👎</button>
+               <span class="feedback-status" role="status"></span>
+             </div>`
+          : ''}
       </div>
     </div>`;
+
+  area.querySelectorAll('.feedback button').forEach(b => {
+    b.addEventListener('click', () =>
+      sendFeedback(b.closest('.feedback').dataset.trace, b.dataset.value, b));
+  });
 }
 
 function renderError(msg) {
@@ -143,7 +188,7 @@ async function verifyDebunk() {
     const res = await fetch('/api/debunk', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ message }),
+      body:    JSON.stringify({ message, session_id: getSessionId() }),
     });
 
     if (!res.ok) {

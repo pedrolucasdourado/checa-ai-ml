@@ -16,7 +16,7 @@ from __future__ import annotations
 import os
 from typing import Protocol, Sequence
 
-from src.config import EMBED_MODEL, EMBEDDING_PROVIDER
+from src.config import EMBED_MODEL, EMBEDDING_PROVIDER, LLM_MAX_RETRIES, LLM_TIMEOUT_SECONDS
 
 
 class EmbeddingProvider(Protocol):
@@ -45,6 +45,8 @@ class OpenAIEmbeddingProvider:
         self.model = model
         self._batch_size = batch_size
         self._client = None
+        # Tokens consumidos na última chamada (lido pelo tracing para estimar custo).
+        self.last_usage_tokens: int | None = None
 
     @property
     def dimension(self) -> int:
@@ -62,17 +64,22 @@ class OpenAIEmbeddingProvider:
                     "OPENAI_API_KEY não configurada. "
                     "Defina a variável de ambiente ou adicione ao arquivo .env."
                 )
-            self._client = openai.OpenAI(api_key=api_key)
+            self._client = openai.OpenAI(
+                api_key=api_key, timeout=LLM_TIMEOUT_SECONDS, max_retries=LLM_MAX_RETRIES
+            )
         return self._client
 
     def embed_documents(self, texts: Sequence[str]) -> list[list[float]]:
         out: list[list[float]] = []
         client = self._get_client()
+        tokens = 0
         for start in range(0, len(texts), self._batch_size):
             # A API rejeita string vazia; substitui por um espaço.
             batch = [t if t.strip() else " " for t in texts[start : start + self._batch_size]]
             resp = client.embeddings.create(model=self.model, input=batch)
             out.extend(item.embedding for item in sorted(resp.data, key=lambda d: d.index))
+            tokens += getattr(getattr(resp, "usage", None), "total_tokens", 0) or 0
+        self.last_usage_tokens = tokens
         return out
 
     def embed_query(self, text: str) -> list[float]:

@@ -209,6 +209,70 @@ uvicorn app:app --reload --port 8000
 python scripts/agent_cli.py
 ```
 
+## Observabilidade e LLMOps (Langfuse)
+
+Cada chamada a `POST /api/debunk` gera um **trace** no Langfuse:
+
+```text
+verify-claim            (trace: latência total, session, tags, prompt_version)
+├─ retrieval            (retriever: query → chunks/scores, candidatos vs. selecionados)
+│  └─ embed-query       (embedding: tokens + custo)
+└─ llm-generation       (generation: prompt, resposta, tokens in/out, custo, finish_reason)
+```
+
+| Necessidade | Onde aparece |
+|---|---|
+| Traces por requisição | Langfuse > Tracing; `trace_id` volta no JSON da API |
+| Tokens e custo | `usage_details` por generation/embedding; custo inferido pelo Langfuse a partir do modelo |
+| Latência | duração de cada span (embedding, busca, LLM) e do trace |
+| Feedback do usuário | botões 👍/👎 → `POST /api/feedback` → score `user_feedback` no trace |
+| Qualidade online | scores automáticos: `top_similarity`, `abstained`, `sources_grounded` (URL citada que não veio dos laudos = alucinação de link) |
+| Versão do prompt | Langfuse Prompt Management (`debunk@<n>`); cada generation fica ligada à versão; filtre por tag `prompt:<versão>` |
+
+**Configuração:** copie `.env.example` para `.env` e preencha `LANGFUSE_PUBLIC_KEY`,
+`LANGFUSE_SECRET_KEY` e `LANGFUSE_BASE_URL`. Sem as chaves o tracing é desligado e nada muda no pipeline.
+Com `LANGFUSE_CAPTURE_CONTENT=false` o texto dos usuários não é enviado (só métricas e metadados).
+
+### Guardrails (`src/rag/guardrails.py`)
+
+- **Saída estruturada:** o LLM responde `{texto, fontes_usadas}` (JSON Schema estrito + Pydantic). Se vier fora do schema, o texto cru é aproveitado.
+- **Anti-link-inventado:** toda URL citada precisa estar entre as evidências recuperadas; URLs fora do contexto são removidas da resposta e uma fonte real é creditada. O score `sources_grounded` mede a saída crua do modelo (taxa de alucinação de link) e `structured_output` mede a aderência ao schema.
+- **Prompt injection nos laudos:** chunks com risco `high` (payload da ingestão ou reavaliação em runtime) são excluídos do contexto; o prompt também instrui o modelo a tratar laudos como dados não confiáveis.
+
+### CI/CD (GitHub Actions)
+
+| Quando | Workflow | O que faz |
+|---|---|---|
+| Todo PR / push na main | `ci.yml` › `tests` | `pytest` (inclui contrato do prompt, guardrails, harness do eval) |
+| PR que muda prompt, guardrails, retriever, serviço, `config.py` ou `evals/` | `ci.yml` › `eval` | Eval de regressão (`scripts/eval_generation.py`) no golden set `evals/golden.jsonl`; **falha o PR** se faithfulness, abstenção correta, saída estruturada, links ou injection ficarem fora de `evals/thresholds.json` |
+| Merge na main com `prompts.py` alterado | `prompts-staging.yml` | Publica a nova versão no Langfuse com label `staging` (idempotente) |
+| Release publicado (ou manual) | `release.yml` | Eval → aprovação do environment `production` → move o label `production` para a versão do release |
+
+- **Check obrigatório da branch:** `ci-ok` (verde = testes ok e eval ok ou desnecessário).
+- **Prompt alterado?** Incremente `PROMPT_VERSION` e rode `python scripts/sync_prompts.py --write-lock`; sem isso o teste de contrato falha. `python scripts/sync_prompts.py --check` mostra o que mudaria no Langfuse sem escrever.
+- **Eval local:** `python scripts/eval_generation.py` (usa `OPENAI_API_KEY`, ~11 casos, centavos). O golden set é autocontido (evidências no próprio caso), sem Qdrant/DVC. Ao encontrar uma falha real em produção, adicione o caso a `evals/golden.jsonl`.
+- **Rollback:** republique o release anterior ou mova o label `production` no Langfuse.
+- **Setup único no GitHub:** secrets `OPENAI_API_KEY`, `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY` (+ variável `LANGFUSE_BASE_URL`); environment `production` com *Required reviewers*; proteger a `main` exigindo o check `ci-ok`. PRs de forks não recebem secrets (o eval é pulado com aviso).
+
+### Gestão de prompts
+
+`src/rag/prompts.py` é o módulo único de prompts (usado pela API e por `scripts/generate_debunk.py`).
+Em runtime o prompt `debunk` é lido do **Langfuse Prompt Management** pelo label `PROMPT_LABEL`
+(`production` por padrão; use `staging` para testar), com cache do SDK. Se o Langfuse ou o prompt
+estiverem indisponíveis, o texto local do módulo é usado como fallback.
+
+```bash
+python scripts/sync_prompts.py            # texto local → Langfuse com label staging (só cria versão se mudou)
+python scripts/sync_prompts.py --promote  # move production para a versão local (normalmente feito pelo release.yml)
+```
+
+Editar o prompt no Langfuse (ou rodar o sync) cria uma nova versão sem redeploy; **rollback** = mover
+o label `production` para a versão anterior. Variáveis usam `{{query}}` e `{{contexto}}`.
+Se mudar o texto local, incremente `PROMPT_VERSION` e atualize o lock (ver CI/CD).
+
+> Ao trocar `LLM_MODEL`, confira
+> em Langfuse > Settings > Models se o preço do modelo está cadastrado (senão o custo fica vazio).
+
 ## Tecnologias Utilizadas
 
 | Camada | Tecnologia | Papel |

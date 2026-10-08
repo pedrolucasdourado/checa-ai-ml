@@ -18,6 +18,7 @@ pydantic
 sentence-transformers
 qdrant-client
 openai
+langfuse>=4,<5   # LLMOps: tracing, tokens, custo, latência, feedback
 python-dotenv
 tqdm
 trafilatura
