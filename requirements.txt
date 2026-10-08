@@ -25,3 +25,5 @@ cloudscraper
 # Tests:
 pytest
 openpyxl
+duckduckgo-search
+tavily-python

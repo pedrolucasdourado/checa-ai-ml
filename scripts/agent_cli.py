@@ -42,6 +42,11 @@ def main():
                 print("-" * 30)
                 print(f"{narrative}")
                 print("-" * 30)
+            elif status == 'deep_searched':
+                print("\n🌐 [DEEP SEARCH] Não encontramos checagens oficiais, mas pesquisamos na web:")
+                print("-" * 30)
+                print(f"{narrative}")
+                print("-" * 30)
             elif status == 'abstained':
                 print("\n⚪ [ABSTAINED] Nenhuma checagem oficial encontrada.")
                 print(f"Score: {score}")
