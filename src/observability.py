@@ -229,6 +229,34 @@ def create_chat_prompt(
         return None
 
 
+def get_prompt_version(name: str, label: str) -> tuple[int, list[dict]] | None:
+    """(versão, [{role, content}]) do prompt no label dado, sem cache; None se não existir."""
+    client = _get_client()
+    if client is None:
+        return None
+    try:
+        prompt = client.get_prompt(name, label=label, type="chat", cache_ttl_seconds=0)
+        return prompt.version, [
+            {"role": m["role"], "content": m["content"]} for m in prompt.prompt if "role" in m
+        ]
+    except Exception:  # noqa: BLE001 - label/prompt inexistente também cai aqui
+        log.info("Prompt '%s' sem versão no label '%s'.", name, label)
+        return None
+
+
+def set_prompt_labels(name: str, version: int, labels: list[str]) -> bool:
+    """Aponta os labels para a versão (move o label se ele já existir em outra)."""
+    client = _get_client()
+    if client is None:
+        return False
+    try:
+        client.update_prompt(name=name, version=version, new_labels=labels)
+        return True
+    except Exception:  # noqa: BLE001
+        log.exception("Falha ao mover labels %s do prompt '%s' para a versão %s.", labels, name, version)
+        return False
+
+
 def score_trace(
     trace_id: str,
     name: str,

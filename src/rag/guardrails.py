@@ -31,6 +31,10 @@ _RISK_ORDER = {"low": 0, "medium": 1, "high": 2}
 class GeneratedAnswer(BaseModel):
     """Contrato de saída do LLM."""
 
+    laudos_tratam_alegacao: bool = Field(
+        default=True,
+        description="False se os laudos fornecidos NÃO tratam da alegação (o modelo deve se abster).",
+    )
     texto: str = Field(min_length=1, description="Contranarrativa em texto corrido, com citações [n].")
     fontes_usadas: list[str] = Field(
         default_factory=list, description="URLs das evidências efetivamente usadas."
@@ -47,10 +51,11 @@ RESPONSE_FORMAT: dict[str, Any] = {
         "schema": {
             "type": "object",
             "properties": {
+                "laudos_tratam_alegacao": {"type": "boolean"},
                 "texto": {"type": "string"},
                 "fontes_usadas": {"type": "array", "items": {"type": "string"}},
             },
-            "required": ["texto", "fontes_usadas"],
+            "required": ["laudos_tratam_alegacao", "texto", "fontes_usadas"],
             "additionalProperties": False,
         },
     },

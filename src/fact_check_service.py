@@ -304,6 +304,13 @@ class FactCheckService:
         raw = self._call_llm(prompt.render_system(), user_prompt)
         sources = unique_sources(used)
         answer, structured = parse_answer(raw)
+        if not answer.laudos_tratam_alegacao:
+            # O próprio modelo sinalizou que os laudos não cobrem a alegação:
+            # abstém-se em vez de responder de memória e creditar fonte irrelevante.
+            log.info("Guardrail: modelo se absteve (laudos não tratam da alegação).")
+            result = self._abstention(best_score, used)
+            result["abstained_by"] = "model"
+            return result
         counter_narrative, report = enforce_grounding(
             answer, [(s.url, s.dominio) for s in sources], structured
         )
