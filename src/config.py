@@ -98,7 +98,7 @@ def _env_bool(name: str, default: bool) -> bool:
 
 # ─── Observabilidade (Langfuse) ──────────────────────────────────────
 # O SDK lê LANGFUSE_PUBLIC_KEY / LANGFUSE_SECRET_KEY / LANGFUSE_BASE_URL do ambiente.
-# Sem as chaves, o tracing vira no-op e o pipeline funciona normalmente.
+# Sem as chaves, o tracing vira no-op; a geração depende dos prompts remotos.
 LANGFUSE_ENABLED = _env_bool("LANGFUSE_ENABLED", True)
 # false → traces guardam só tamanho/metadados, nunca o texto do usuário (LGPD).
 LANGFUSE_CAPTURE_CONTENT = _env_bool("LANGFUSE_CAPTURE_CONTENT", True)
@@ -107,27 +107,4 @@ LANGFUSE_CAPTURE_CONTENT = _env_bool("LANGFUSE_CAPTURE_CONTENT", True)
 SAFE_REFUSAL_MESSAGE = "Desculpe, mas não posso processar esta solicitação porque ela viola nossas diretrizes de segurança e moderação."
 SAFE_INJECTION_REFUSAL_MESSAGE = "Detectamos uma tentativa de contornar as instruções do sistema. Por favor, envie a alegação que deseja verificar."
 
-# ─── Deep Search / Fallback Prompts ───────────────────────────────────
-DEEP_SEARCH_SYSTEM_PROMPT = """\
-Você é um assistente de pesquisa web neutro. 
-O sistema de checagem oficial não encontrou laudos conclusivos para a alegação do usuário.
-Sua tarefa é resumir as informações encontradas na internet sobre o assunto.
-
-REGRAS CRÍTICAS:
-1. NÃO diga se a alegação é "Fato" ou "Fake". Você não tem um laudo oficial para isso.
-2. Use frases como: "Encontramos menções a...", "Alguns sites relatam que...", "Não há consenso claro, mas...".
-3. Apresente os pontos principais encontrados nos resultados da busca.
-4. FINALIZE SEMPRE com um aviso de pensamento crítico: 
-   "Atenção: Não encontramos checagens oficiais para este caso. Recomendamos cautela e que você verifique a credibilidade das fontes citadas antes de acreditar ou compartilhar."
-5. Mantenha um tom informativo, neutro e cauteloso.
-"""
-
-DEEP_SEARCH_USER_PROMPT = """\
-ALEGAÇÃO: {query}
-
-RESULTADOS DA BUSCA WEB:
-{web_results}
-
-TAREFA: Com base nos resultados acima, forneça um resumo informativo e neutro. Lembre-se de não dar um veredito final.
-"""
 PROMPT_LABEL = os.environ.get("PROMPT_LABEL", "production")

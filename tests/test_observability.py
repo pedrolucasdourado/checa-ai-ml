@@ -169,7 +169,7 @@ def test_llm_generation_records_usage_and_model(lf, monkeypatch):
     assert svc._call_llm("sys", "user") == "ok"
     gen = by_name(lf, "llm-generation")[0]
     assert gen.as_type == "generation" and gen.kwargs["model"] == fcs.LLM_MODEL
-    assert gen.kwargs["version"] == fcs.PROMPT_VERSION
+    assert gen.kwargs["version"] == 'unresolved'
     assert gen.updates[-1]["usage_details"] == {"input": 120, "output": 30, "total": 150}
 
 

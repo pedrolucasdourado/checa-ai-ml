@@ -24,6 +24,10 @@ jobs:
       - name: Eval (faithfulness, abstenção, links, injection)
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          LANGFUSE_PUBLIC_KEY: ${{ secrets.LANGFUSE_PUBLIC_KEY }}
+          LANGFUSE_SECRET_KEY: ${{ secrets.LANGFUSE_SECRET_KEY }}
+          LANGFUSE_BASE_URL: ${{ vars.LANGFUSE_BASE_URL || 'https://cloud.langfuse.com' }}
+          PROMPT_LABEL: staging
         run: python scripts/eval_generation.py
       - uses: actions/upload-artifact@v4
         if: always()

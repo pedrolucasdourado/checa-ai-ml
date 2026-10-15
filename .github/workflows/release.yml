@@ -1,15 +1,13 @@
-name: Release → promove prompt para produção
+name: Release → valida prompts de produção
 
-# "Sobe para produção de verdade": ao publicar um Release (ou manualmente).
-# 1) eval de regressão  2) aprovação do environment "production"  3) label production no Langfuse.
-# Rollback: republique o release anterior (ou mova o label no Langfuse).
+# Read-only release gate: evaluation and validation of labels moved in Langfuse.
 on:
   release:
     types: [published]
   workflow_dispatch:
 
 concurrency:
-  group: prompts-sync
+  group: prompts-release-validation
   cancel-in-progress: false
 
 permissions:
@@ -20,7 +18,7 @@ jobs:
     uses: ./.github/workflows/eval.yml
     secrets: inherit
 
-  promote:
+  validate:
     needs: eval
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -38,9 +36,7 @@ jobs:
           cache: pip
           cache-dependency-path: requirements-ci.txt
       - run: pip install -r requirements-ci.txt
-      - name: Garante que a versão do release existe no Langfuse
-        run: python scripts/sync_prompts.py --label staging
-      - name: Mostra o que será promovido
-        run: python scripts/sync_prompts.py --promote --check
-      - name: Promove para production
-        run: python scripts/sync_prompts.py --promote
+      - name: Valida staging
+        run: python scripts/validate_prompts.py --label staging
+      - name: Valida production
+        run: python scripts/validate_prompts.py --label production

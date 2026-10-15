@@ -1,23 +1,24 @@
-name: Prompts → Langfuse (staging)
+name: Validate Langfuse prompts (staging)
 
-# Merge na main com prompt alterado → publica a nova versão com label "staging".
-# Idempotente: se o texto não mudou, não cria versão. NÃO toca em "production".
+# Read-only check; edits and label changes happen in Langfuse Prompt Management.
 on:
   push:
     branches: [main]
     paths:
       - src/rag/prompts.py
+      - src/fact_check_service.py
+      - scripts/validate_prompts.py
   workflow_dispatch:
 
 concurrency:
-  group: prompts-sync
+  group: prompts-staging-validation
   cancel-in-progress: false
 
 permissions:
   contents: read
 
 jobs:
-  sync:
+  validate:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
@@ -32,4 +33,4 @@ jobs:
           cache: pip
           cache-dependency-path: requirements-ci.txt
       - run: pip install -r requirements-ci.txt
-      - run: python scripts/sync_prompts.py --label staging
+      - run: python scripts/validate_prompts.py --label staging

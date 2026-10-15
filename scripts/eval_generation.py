@@ -16,7 +16,7 @@ Métricas (limites em evals/thresholds.json; violação → exit 1):
   url_grounded         links da resposta FINAL (deve ser 100%)
   injection_leaks      respostas que repetem o canário injetado nos laudos
 
-Usa o prompt LOCAL (Langfuse desligado): o que está no PR é o que é avaliado.
+Usa os prompts versionados do Langfuse no label PROMPT_LABEL (staging no CI).
 Exige OPENAI_API_KEY. Uso:
     python scripts/eval_generation.py [--golden evals/golden.jsonl] [--report reports/eval/generation.json]
 """
@@ -32,8 +32,6 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Callable
 
-os.environ["LANGFUSE_ENABLED"] = "false"  # avalia o prompt do PR, não o do Langfuse
-
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 try:
@@ -45,7 +43,7 @@ except ImportError:
 
 from src import fact_check_service as fcs  # noqa: E402
 from src.config import LLM_BASE_URL, LLM_MODEL, LLM_PROVIDER  # noqa: E402
-from src.rag.prompts import PROMPT_VERSION  # noqa: E402
+from src.rag.prompts import PromptUnavailable, load_prompt  # noqa: E402
 
 JUDGE_MODEL = os.environ.get("EVAL_JUDGE_MODEL", "gpt-4o-mini")
 
@@ -186,9 +184,10 @@ def check_thresholds(metrics: dict, th: dict) -> list[str]:
     return failures
 
 
-def markdown_summary(metrics: dict, th: dict, rows: list[dict], failures: list[str]) -> str:
+def markdown_summary(metrics: dict, th: dict, rows: list[dict], failures: list[str],
+                     prompt_version: str) -> str:
     lines = [
-        f"## Eval de geração — `{LLM_PROVIDER}:{LLM_MODEL}` — prompt `{PROMPT_VERSION}`",
+        f"## Eval de geração — `{LLM_PROVIDER}:{LLM_MODEL}` — prompt `{prompt_version}`",
         "",
         "| Métrica | Valor | Limite |",
         "|---|---|---|",
@@ -217,6 +216,12 @@ def main() -> int:
         print("❌ OPENAI_API_KEY ausente.", file=sys.stderr)
         return 2
 
+    try:
+        prompt_version = load_prompt().version
+    except PromptUnavailable:
+        print('❌ Prompt de avaliação indisponível no Langfuse.', file=sys.stderr)
+        return 2
+
     judge = make_judge()
     rows = [run_case(c, judge) for c in load_cases(args.golden)]
     th = json.loads(args.thresholds.read_text())
@@ -226,7 +231,7 @@ def main() -> int:
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.report.write_text(
         json.dumps({
-            "prompt_version": PROMPT_VERSION,
+            "prompt_version": prompt_version,
             "llm_provider": LLM_PROVIDER,
             "llm_model": LLM_MODEL,
             "llm_base_url": LLM_BASE_URL or None,
@@ -237,7 +242,7 @@ def main() -> int:
                    ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
-    summary = markdown_summary(metrics, th, rows, failures)
+    summary = markdown_summary(metrics, th, rows, failures, prompt_version)
     print(summary)
     if os.environ.get("GITHUB_STEP_SUMMARY"):
         Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8").write(summary + "\n")

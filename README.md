@@ -293,31 +293,37 @@ Com `LANGFUSE_CAPTURE_CONTENT=false` o texto dos usuários não é enviado (só 
 |---|---|---|
 | Todo PR / push na main | `ci.yml` › `tests` | `pytest` (inclui contrato do prompt, guardrails, harness do eval) |
 | PR que muda prompt, guardrails, retriever, serviço, `config.py` ou `evals/` | `ci.yml` › `eval` | Eval de regressão (`scripts/eval_generation.py`) no golden set `evals/golden.jsonl`; **falha o PR** se faithfulness, abstenção correta, saída estruturada, links ou injection ficarem fora de `evals/thresholds.json` |
-| Merge na main com `prompts.py` alterado | `prompts-staging.yml` | Publica a nova versão no Langfuse com label `staging` (idempotente) |
-| Release publicado (ou manual) | `release.yml` | Eval → aprovação do environment `production` → move o label `production` para a versão do release |
+| Merge na main com integração de prompt alterada | `prompts-staging.yml` | Valida as quatro versões `staging` sem criar ou editar prompts |
+| Release publicado (ou manual) | `release.yml` | Eval → aprovação do environment `production` → valida os labels já configurados, sem movê-los |
 
 - **Check obrigatório da branch:** `ci-ok` (verde = testes ok e eval ok ou desnecessário).
-- **Prompt alterado?** Incremente `PROMPT_VERSION` e rode `python scripts/sync_prompts.py --write-lock`; sem isso o teste de contrato falha. `python scripts/sync_prompts.py --check` mostra o que mudaria no Langfuse sem escrever.
-- **Eval local:** `python scripts/eval_generation.py` (usa `OPENAI_API_KEY`, 20 casos, centavos). O golden set é autocontido (evidências no próprio caso), sem Qdrant/DVC. Ao encontrar uma falha real em produção, adicione o caso a `evals/golden.jsonl`.
+- **Prompt alterado?** Publique uma nova versão no Langfuse e aponte `staging` para ela; execute `python scripts/validate_prompts.py --label staging` antes da avaliação.
+- **Eval local:** `PROMPT_LABEL=staging python scripts/eval_generation.py` (usa `OPENAI_API_KEY` e credenciais Langfuse, 20 casos, centavos). O golden set é autocontido (evidências no próprio caso), sem Qdrant/DVC. Ao encontrar uma falha real em produção, adicione o caso a `evals/golden.jsonl`.
 - **Comparação com LLM local:** mantenha embeddings e coleção Qdrant inalterados e configure apenas `LLM_PROVIDER`, `LLM_MODEL`, `LLM_BASE_URL` e `LLM_API_KEY`. O procedimento reproduzível está em [Avaliação de LLM local](docs/LOCAL_LLM_EVALUATION.md).
-- **Rollback:** republique o release anterior ou mova o label `production` no Langfuse.
+- **Rollback:** mova o label `production` para a versão anterior no Langfuse.
 - **Setup único no GitHub:** secrets `OPENAI_API_KEY`, `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY` (+ variável `LANGFUSE_BASE_URL`); environment `production` com *Required reviewers*; proteger a `main` exigindo o check `ci-ok`. PRs de forks não recebem secrets (o eval é pulado com aviso).
 
 ### Gestão de prompts
 
-`src/rag/prompts.py` é o módulo único de prompts (usado pela API e por `scripts/generate_debunk.py`).
-Em runtime o prompt `debunk` é lido do **Langfuse Prompt Management** pelo label `PROMPT_LABEL`
-(`production` por padrão; use `staging` para testar), com cache do SDK. Se o Langfuse ou o prompt
-estiverem indisponíveis, o texto local do módulo é usado como fallback.
+`src/rag/prompts.py` define apenas os nomes, variáveis obrigatórias e a validação.
+Os textos dos quatro prompts `evidence-flow`, `claim-analysis`, `ml-v1-verification`
+e `ml-v1-condensation` vivem no **Langfuse Prompt Management**. Em runtime a API
+busca a versão indicada por `PROMPT_LABEL` (`production` por padrão; use `staging`
+para homologar) com o cache do SDK. Sem uma versão válida, a geração não chama o
+modelo e segue o caminho seguro, sem veredito conclusivo.
 
 ```bash
-python scripts/sync_prompts.py            # texto local → Langfuse com label staging (só cria versão se mudou)
-python scripts/sync_prompts.py --promote  # move production para a versão local (normalmente feito pelo release.yml)
+python scripts/validate_prompts.py --label staging
+PROMPT_LABEL=staging python scripts/eval_generation.py
+python scripts/validate_prompts.py --label production
 ```
 
-Editar o prompt no Langfuse (ou rodar o sync) cria uma nova versão sem redeploy; **rollback** = mover
-o label `production` para a versão anterior. Variáveis usam `{{query}}` e `{{contexto}}`.
-Se mudar o texto local, incremente `PROMPT_VERSION` e atualize o lock (ver CI/CD).
+Edite e versione os prompts na interface do Langfuse. Os dois prompts v1 usam
+`{{query}}`, `{{contexto}}` e `{{max_chars}}`; a condensação também usa
+`{{narrative}}`. Confira os testes e o relatório da avaliação em `staging`,
+depois mova manualmente o label `production` para as versões aprovadas antes
+do release. Para reverter, mova esse label às versões anteriores. O release
+apenas valida os labels e nunca sobrescreve alterações feitas no Langfuse.
 
 > Ao trocar `LLM_MODEL`, confira
 > em Langfuse > Settings > Models se o preço do modelo está cadastrado (senão o custo fica vazio).

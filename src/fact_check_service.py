@@ -51,7 +51,6 @@ from src.rag.guardrails import (
 )
 from src.rag.prompts import (
     ABSTENTION_MESSAGE as _ABSTENTION_MESSAGE,
-    PROMPT_VERSION,
     PromptBundle,
     PromptUnavailable,
     current_prompt,
@@ -372,7 +371,7 @@ class FactCheckService:
     def _chat(self, system: str, user: str, response_format: dict | None) -> str:
         messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
         bundle = current_prompt.get()
-        prompt_version = bundle.version if bundle else PROMPT_VERSION
+        prompt_version = bundle.version if bundle else 'unresolved'
         with observability.observation(
             "llm-generation",
             as_type="generation",
