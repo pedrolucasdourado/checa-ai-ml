@@ -11,6 +11,31 @@ import pytest
 
 
 @pytest.fixture(autouse=True)
+def offline_prompt_catalog(monkeypatch):
+    """Versioned synthetic prompts keep unit tests independent from Langfuse."""
+    from types import SimpleNamespace
+
+    from src import observability
+
+    templates = {
+        'evidence-flow': '{{query}}\n{{contexto}}',
+        'claim-analysis': ('--- ENTRADA ---\n{{message}}\n\n'
+                           '--- CONTEXTO DA URL, SE DISPONÍVEL ---\n{{url_context}}'),
+        'ml-v1-verification': '{{query}}\n{{contexto}}\n{{max_chars}}',
+        'ml-v1-condensation': '{{query}}\n{{contexto}}\n{{max_chars}}\n{{narrative}}',
+    }
+
+    class Client:
+        def get_prompt(self, name, **kwargs):
+            return SimpleNamespace(name=name, version=1, type='chat', is_fallback=False,
+                prompt=[{'role': 'system', 'content': 'System'},
+                        {'role': 'user', 'content': templates[name]}])
+
+    monkeypatch.setattr(observability, '_client', Client())
+    monkeypatch.setattr(observability, '_client_failed', False)
+
+
+@pytest.fixture(autouse=True)
 def offline_safety_and_web(monkeypatch, request):
     """Moderação (OpenAI) e DeepSearch (Tavily) são rede: nos testes ficam inertes."""
     if request.node.get_closest_marker("live_e2e"):

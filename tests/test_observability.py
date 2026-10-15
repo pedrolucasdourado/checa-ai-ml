@@ -46,6 +46,15 @@ class FakeLangfuse:
     def flush(self):
         pass
 
+    def get_prompt(self, name, **kwargs):
+        if name == 'claim-analysis':
+            user = '--- ENTRADA ---\n{{message}}\n\n--- CONTEXTO DA URL, SE DISPONÍVEL ---\n{{url_context}}'
+        else:
+            user = '{{query}}\n{{contexto}}'
+        return SimpleNamespace(name=name, version=1, type='chat', is_fallback=False,
+                               prompt=[{'role': 'system', 'content': 'System'},
+                                       {'role': 'user', 'content': user}])
+
 
 @pytest.fixture
 def lf(monkeypatch):
@@ -92,8 +101,8 @@ def test_disabled_is_noop_and_trace_id_is_none(service, monkeypatch):
     monkeypatch.setattr(observability, "_client", None)
     monkeypatch.setattr(observability, "_client_failed", True)
     service.hits = [_hit("a", 0.9)]
-    r = service.verify_claim("alegação qualquer")
-    assert r["status"] == "matched" and r["trace_id"] is None
+    with pytest.raises(prompts.PromptUnavailable):
+        service.verify_claim("alegação qualquer")
 
 
 def test_matched_trace_carries_prompt_version_and_scores(lf, service):
@@ -271,15 +280,16 @@ def test_render_replaces_only_known_variables():
     assert out == "a Q b {{query}} {x}"
 
 
-def test_load_prompt_falls_back_to_local_without_langfuse(monkeypatch):
+def test_load_prompt_requires_langfuse_without_client(monkeypatch):
     monkeypatch.setattr(observability, "_client", None)
     monkeypatch.setattr(observability, "_client_failed", True)
-    p = prompts.load_prompt()
-    assert (p.source, p.version) == ("local", prompts.PROMPT_VERSION)
+    with pytest.raises(prompts.PromptUnavailable):
+        prompts.load_prompt()
 
 
 def test_load_prompt_uses_langfuse_version_and_links_generation(lf, service):
     remote = SimpleNamespace(
+        name='evidence-flow', type='chat',
         version=7,
         is_fallback=False,
         prompt=[
@@ -287,8 +297,8 @@ def test_load_prompt_uses_langfuse_version_and_links_generation(lf, service):
             {"role": "user", "content": "Pergunta: {{query}} | {{contexto}}"},
         ],
     )
-    fallback_claim = SimpleNamespace(version=3, is_fallback=True, prompt=[])
-    lf.get_prompt = lambda name, **kw: fallback_claim if name == "claim-analysis" else remote
+    original = lf.get_prompt
+    lf.get_prompt = lambda name, **kw: original(name, **kw) if name == "claim-analysis" else remote
     service.hits = [_hit("a", 0.9)]
     sent = {}
     service._call_llm = lambda s, u: sent.update(system=s, user=u) or "ok"
@@ -300,6 +310,7 @@ def test_load_prompt_uses_langfuse_version_and_links_generation(lf, service):
 
 def test_load_claim_prompt_has_independent_langfuse_version(lf):
     remote = SimpleNamespace(
+        name='claim-analysis', type='chat',
         version=9,
         is_fallback=False,
         prompt=[
@@ -320,10 +331,11 @@ def test_load_claim_prompt_has_independent_langfuse_version(lf):
 
 def test_load_prompt_ignores_fallback_object(lf):
     lf.get_prompt = lambda name, **kw: SimpleNamespace(version=1, is_fallback=True, prompt=[])
-    assert prompts.load_prompt().source == "local"
+    with pytest.raises(prompts.PromptUnavailable):
+        prompts.load_prompt()
 
 
-def test_deep_search_generation_is_not_linked_to_debunk_prompt(service, monkeypatch):
+def test_deep_search_generation_is_not_linked_to_debunk_prompt(lf, service, monkeypatch):
     seen = {}
     monkeypatch.setattr(fcs, "perform_web_search", lambda q, max_results=5: [{"title": "t", "snippet": "s", "url": "https://w.example"}])
     service._call_llm_text = lambda s, u: seen.update(bundle=prompts.current_prompt.get()) or "síntese"

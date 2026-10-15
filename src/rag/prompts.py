@@ -19,11 +19,15 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import re
 from contextvars import ContextVar
 from dataclasses import dataclass
 from typing import Any
 
+from langfuse.model import ChatPromptClient
+
 from src import observability
+from src.observability import PromptUnavailable
 from src.config import PROMPT_LABEL
 
 log = logging.getLogger("checa-ai.prompts")
@@ -32,6 +36,14 @@ EVIDENCE_PROMPT_NAME = "evidence-flow"
 EVIDENCE_PROMPT_VERSION = "evidence-flow-v3"
 CLAIM_PROMPT_NAME = "claim-analysis"
 CLAIM_PROMPT_VERSION = "claim-analysis-v1"
+V1_VERIFICATION_PROMPT_NAME = "ml-v1-verification"
+V1_CONDENSATION_PROMPT_NAME = "ml-v1-condensation"
+REQUIRED_VARIABLES = {
+    EVIDENCE_PROMPT_NAME: frozenset({'query', 'contexto'}),
+    CLAIM_PROMPT_NAME: frozenset({'message', 'url_context'}),
+    V1_VERIFICATION_PROMPT_NAME: frozenset({'query', 'contexto', 'max_chars'}),
+    V1_CONDENSATION_PROMPT_NAME: frozenset({'query', 'contexto', 'max_chars', 'narrative'}),
+}
 
 # Backward-compatible names for callers that refer to the synthesis prompt.
 PROMPT_NAME = EVIDENCE_PROMPT_NAME
@@ -131,9 +143,8 @@ current_prompt: ContextVar[PromptBundle | None] = ContextVar("current_prompt", d
 
 def render(template: str, **variables: str) -> str:
     """Substitui {{var}}. Mais seguro que str.format: contexto com chaves não quebra."""
-    for key, value in variables.items():
-        template = template.replace("{{" + key + "}}", str(value))
-    return template
+    return re.sub(r'{{([a-zA-Z_][a-zA-Z0-9_]*)}}',
+                  lambda match: str(variables.get(match.group(1), match.group(0))), template)
 
 
 @dataclass(frozen=True)
@@ -186,30 +197,40 @@ def _local_bundle(spec: PromptSpec) -> PromptBundle:
 
 
 def load_prompt() -> PromptBundle:
-    """Resolve o prompt de síntese evidencial no Langfuse ou no fallback local."""
-    return _load_prompt(EVIDENCE_PROMPT)
+    return load_named_prompt(EVIDENCE_PROMPT_NAME)
 
 
 def load_claim_prompt() -> PromptBundle:
-    """Resolve o prompt de extração de alegação no Langfuse ou no fallback local."""
-    return _load_prompt(CLAIM_PROMPT)
+    return load_named_prompt(CLAIM_PROMPT_NAME)
 
 
-def _load_prompt(spec: PromptSpec) -> PromptBundle:
-    messages = spec.messages()
-    fetched = observability.fetch_chat_prompt(spec.name, PROMPT_LABEL, messages)
-    if fetched is None:
-        return _local_bundle(spec)
-    lf_prompt, remote = fetched
-    by_role = {m["role"]: m["content"] for m in remote if isinstance(m, dict) and "role" in m}
-    if "system" not in by_role or "user" not in by_role:
-        log.warning("Prompt '%s' no Langfuse sem mensagens system+user; usando o local.", spec.name)
-        return _local_bundle(spec)
+def load_named_prompt(name: str, *, label: str | None = None) -> PromptBundle:
+    if name not in REQUIRED_VARIABLES:
+        raise PromptUnavailable(f"Prompt '{name}' não reconhecido")
+    lf_prompt, remote = observability.fetch_chat_prompt(name, label or PROMPT_LABEL)
+    prompt_type = ('chat' if isinstance(lf_prompt, ChatPromptClient)
+                   else getattr(lf_prompt, 'type', None))
+    if (prompt_type != 'chat' or getattr(lf_prompt, 'name', None) != name
+            or not isinstance(getattr(lf_prompt, 'version', None), int)
+            or not isinstance(remote, list) or len(remote) != 2):
+        raise PromptUnavailable(f"Prompt '{name}' inválido")
+    by_role = {}
+    for message in remote:
+        if (not isinstance(message, dict) or message.get('role') not in {'system', 'user'}
+                or message['role'] in by_role or not isinstance(message.get('content'), str)
+                or not message['content'].strip()):
+            raise PromptUnavailable(f"Prompt '{name}' inválido")
+        by_role[message['role']] = message['content']
+    if set(by_role) != {'system', 'user'}:
+        raise PromptUnavailable(f"Prompt '{name}' inválido")
+    combined = by_role['system'] + by_role['user']
+    if any('{{' + variable + '}}' not in combined for variable in REQUIRED_VARIABLES[name]):
+        raise PromptUnavailable(f"Prompt '{name}' sem variáveis obrigatórias")
     return PromptBundle(
-        spec.name,
+        name,
         by_role["system"],
         by_role["user"],
-        f"{spec.name}@{lf_prompt.version}",
+        f"{name}@{lf_prompt.version}",
         "langfuse",
         _messages_hash(remote),
         lf_prompt,

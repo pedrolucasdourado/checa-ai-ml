@@ -5,6 +5,82 @@ from pathlib import Path
 
 from src.rag import prompts
 
+
+def test_named_loader_uses_each_remote_version_and_validates_roles(monkeypatch):
+    from types import SimpleNamespace
+
+    from src import observability
+
+    variables = {
+        'evidence-flow': '{{query}} {{contexto}}',
+        'claim-analysis': '{{message}} {{url_context}}',
+        'ml-v1-verification': '{{query}} {{contexto}} {{max_chars}}',
+        'ml-v1-condensation': '{{query}} {{contexto}} {{max_chars}} {{narrative}}',
+    }
+
+    class Client:
+        def get_prompt(self, name, **kwargs):
+            assert kwargs['label'] == 'staging' and kwargs['type'] == 'chat'
+            return SimpleNamespace(name=name, version=list(variables).index(name) + 1,
+                type='chat', is_fallback=False, prompt=[
+                    {'role': 'system', 'content': 'System'},
+                    {'role': 'user', 'content': variables[name]},
+                ])
+
+    monkeypatch.setattr(observability, '_client', Client())
+    got = [prompts.load_named_prompt(name, label='staging') for name in variables]
+    assert [item.version for item in got] == [
+        'evidence-flow@1', 'claim-analysis@2', 'ml-v1-verification@3',
+        'ml-v1-condensation@4']
+    assert all(item.source == 'langfuse' for item in got)
+
+
+def test_named_loader_rejects_invalid_remote_prompts(monkeypatch):
+    from types import SimpleNamespace
+
+    import pytest
+
+    from src import observability
+
+    bad_messages = [
+        [{'role': 'system', 'content': 'System'}],
+        [{'role': 'system', 'content': 'A'}, {'role': 'system', 'content': 'B'},
+         {'role': 'user', 'content': '{{query}} {{contexto}}'}],
+        [{'role': 'system', 'content': 'A'}, {'role': 'user', 'content': 'No variables'}],
+    ]
+    for messages in bad_messages:
+        class Client:
+            def get_prompt(self, name, **kwargs):
+                return SimpleNamespace(name=name, version=1, type='chat',
+                                       is_fallback=False, prompt=messages)
+        monkeypatch.setattr(observability, '_client', Client())
+        with pytest.raises(prompts.PromptUnavailable):
+            prompts.load_named_prompt('evidence-flow', label='staging')
+
+    for wrong in ('text', 'fallback'):
+        class Client:
+            def get_prompt(self, name, **kwargs):
+                return SimpleNamespace(name=name, version=1, type=wrong,
+                    is_fallback=wrong == 'fallback', prompt=[
+                        {'role': 'system', 'content': 'System'},
+                        {'role': 'user', 'content': '{{query}} {{contexto}}'},
+                    ])
+        monkeypatch.setattr(observability, '_client', Client())
+        with pytest.raises(prompts.PromptUnavailable):
+            prompts.load_named_prompt('evidence-flow', label='staging')
+
+    class Missing:
+        def get_prompt(self, name, **kwargs):
+            raise RuntimeError('label missing')
+    monkeypatch.setattr(observability, '_client', Missing())
+    with pytest.raises(prompts.PromptUnavailable):
+        prompts.load_named_prompt('evidence-flow', label='production')
+
+
+def test_render_does_not_expand_placeholders_inside_user_data():
+    assert prompts.render('{{query}} / {{contexto}}', query='{{contexto}}',
+                          contexto='evidence') == '{{contexto}} / evidence'
+
 LOCK = json.loads((Path(prompts.__file__).parent / "prompts.lock.json").read_text())
 
 

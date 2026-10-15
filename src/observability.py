@@ -192,24 +192,25 @@ def request_trace(
                 log.exception("Falha ao fechar atributos do trace '%s'.", name)
 
 
-def fetch_chat_prompt(name: str, label: str, fallback: list[dict]) -> tuple[Any, list[dict]] | None:
+class PromptUnavailable(RuntimeError):
+    """Required versioned prompt could not be resolved."""
+
+
+def fetch_chat_prompt(name: str, label: str) -> tuple[Any, list[dict]]:
     """
-    Busca um prompt de chat no Langfuse (com cache do SDK). Retorna
-    (objeto_prompt, mensagens_sem_compilar) ou None se desligado, indisponível
-    ou se o SDK devolveu o fallback (prompt/label inexistente).
+    Busca um prompt de chat no Langfuse (com cache do SDK).
+    Falhas de prompt são fatais para a geração, ao contrário das falhas de tracing.
     """
     client = _get_client()
     if client is None:
-        return None
+        raise PromptUnavailable(f"Prompt '{name}' indisponível")
     try:
-        prompt = client.get_prompt(name, label=label, type="chat", fallback=fallback)
+        prompt = client.get_prompt(name, label=label, type="chat")
         if getattr(prompt, "is_fallback", False):
-            log.warning("Prompt '%s' (label=%s) indisponível no Langfuse; usando o local.", name, label)
-            return None
+            raise PromptUnavailable(f"Prompt '{name}' indisponível")
         return prompt, list(prompt.prompt)
-    except Exception:  # noqa: BLE001
-        log.exception("Falha ao buscar o prompt '%s' no Langfuse.", name)
-        return None
+    except Exception as exc:
+        raise PromptUnavailable(f"Prompt '{name}' indisponível") from exc
 
 
 def create_chat_prompt(
