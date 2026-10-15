@@ -6,7 +6,6 @@ import logging
 import os
 import re
 import unicodedata
-from contextvars import ContextVar
 from typing import Any
 from urllib.parse import urlsplit
 
@@ -54,8 +53,10 @@ from src.rag.prompts import (
     ABSTENTION_MESSAGE as _ABSTENTION_MESSAGE,
     PROMPT_VERSION,
     PromptBundle,
+    PromptUnavailable,
     current_prompt,
     load_claim_prompt,
+    load_named_prompt,
     load_prompt,
 )
 from src.rag.retriever import (
@@ -76,25 +77,6 @@ logger = logging.getLogger("checa-ai.fact-check")
 _ENTITY_PARTICLES = {"da", "das", "de", "do", "dos", "e"}
 _WORD_RE = re.compile(r"[A-Za-zÀ-ÖØ-öø-ÿ]+")
 
-_BACKEND_SYSTEM_PROMPT = """\
-Você verifica alegações usando somente os laudos fornecidos. Escreva uma
-contranarrativa clara, em português, de até {max_chars} caracteres para WhatsApp.
-Cite cada laudo usado pelo número entre colchetes, como [1]. Não inclua
-links nem uma lista de fontes: a API acrescentará as fontes citadas.
-Não invente fatos ou citações. Preencha a saída estruturada exigida; use
-`inconclusiva` e `evidence_sufficient=false` quando os laudos não tratarem da
-mesma alegação. Em `source_urls`, informe as URLs completas dos laudos citados.
-"""
-
-_BACKEND_USER_PROMPT = """\
-Alegação: {query}
-
-Laudos de checagem:
-{contexto}
-
-Produza a contranarrativa curta e suas citações numeradas no campo `explanation`.
-"""
-
 _NARRATIVE_LIMIT = 500
 _DEEP_SEARCH_NARRATIVE_LIMIT = 900
 _REPLY_FIXED_RESERVE = 350
@@ -102,7 +84,6 @@ _MIN_NARRATIVE_CHARS = 80
 _CITATION_PATTERN = re.compile(r"\[(\d+)\]")
 _CHUNK_CITATION_PATTERN = re.compile(r"\[(\d+),\s*trecho\s+\d+\]", re.IGNORECASE)
 _URL_PATTERN = re.compile(r"https?://[^\s\)\]\"'<>]+")
-_generation_version: ContextVar[str | None] = ContextVar("generation_version", default=None)
 
 
 class VerificationGenerationError(RuntimeError):
@@ -391,7 +372,7 @@ class FactCheckService:
     def _chat(self, system: str, user: str, response_format: dict | None) -> str:
         messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
         bundle = current_prompt.get()
-        prompt_version = _generation_version.get() or (bundle.version if bundle else PROMPT_VERSION)
+        prompt_version = bundle.version if bundle else PROMPT_VERSION
         with observability.observation(
             "llm-generation",
             as_type="generation",
@@ -875,7 +856,11 @@ class FactCheckService:
             tags=["prompt:verify-v1", f"llm:{LLM_MODEL}", f"corpus:{corpus_version()}"],
             metadata={"collection": COLLECTION_NAME, "threshold": SIMILARITY_THRESHOLD},
         ) as trace:
-            result = self._verify_claim_for_backend(text)
+            try:
+                result = self._verify_claim_for_backend(text)
+            except PromptUnavailable:
+                logger.warning('Prompt de verificação indisponível; resposta inconclusiva.')
+                result = self._backend_result('insufficient_evidence', None)
             trace.update(
                 output=result["counter_narrative"],
                 metadata={"verdict": result["verdict"], "top_score": result["similarity_score"]},
@@ -924,28 +909,31 @@ class FactCheckService:
         selected_ids = {ev.document_id for ev in selected_sources}
         selected = [ev for ev in evidences if ev.document_id in selected_ids]
         context, used = build_context(selected, MAX_CONTEXT_CHARS)
-        prompt = _BACKEND_USER_PROMPT.format(query=text, contexto=context)
-        system_prompt = _BACKEND_SYSTEM_PROMPT.format(max_chars=narrative_limit)
-        token = _generation_version.set("verify-v1")
+        prompt_bundle = load_named_prompt('ml-v1-verification')
+        prompt = prompt_bundle.render_user(
+            query=text, contexto=context, max_chars=str(narrative_limit))
+        system_prompt = prompt_bundle.render_system(
+            query=text, contexto=context, max_chars=str(narrative_limit))
+        token = current_prompt.set(prompt_bundle)
         try:
             raw = self._call_llm(system_prompt, prompt)
         finally:
-            _generation_version.reset(token)
+            current_prompt.reset(token)
         answer, _ = parse_answer(raw)
         if not answer.laudos_tratam_alegacao:
             return self._backend_fallback(text, best_score, used)
         narrative = answer.texto.strip()
         if len(narrative) > narrative_limit:
-            condensation_prompt = (
-                f"Reduza o texto a no máximo {narrative_limit} caracteres, "
-                "mantendo somente fatos dos laudos e as citações numeradas. "
-                f"Responda apenas com o texto reduzido.\n\n{narrative}"
-            )
-            token = _generation_version.set("verify-v1")
+            condensation_bundle = load_named_prompt('ml-v1-condensation')
+            variables = dict(query=text, contexto=context, max_chars=str(narrative_limit),
+                             narrative=narrative)
+            condensation_prompt = condensation_bundle.render_user(**variables)
+            condensation_system = condensation_bundle.render_system(**variables)
+            token = current_prompt.set(condensation_bundle)
             try:
-                raw = self._call_llm(system_prompt, condensation_prompt)
+                raw = self._call_llm(condensation_system, condensation_prompt)
             finally:
-                _generation_version.reset(token)
+                current_prompt.reset(token)
             answer, _ = parse_answer(raw)
             if not answer.laudos_tratam_alegacao:
                 return self._backend_fallback(text, best_score, used)

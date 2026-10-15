@@ -14,6 +14,72 @@ sys.modules["qdrant_client"] = _qc
 from src import fact_check_service as fcs  # noqa: E402
 
 
+def test_v1_uses_remote_verification_prompt_and_preserves_claim_braces(service, monkeypatch):
+    from src import observability
+
+    class Client:
+        def get_prompt(self, name, **kwargs):
+            assert name == 'ml-v1-verification'
+            return SimpleNamespace(name=name, version=7, type='chat', is_fallback=False,
+                prompt=[{'role': 'system', 'content': 'Remote limit {{max_chars}}'},
+                        {'role': 'user', 'content': 'Claim {{query}}\nEvidence {{contexto}}'}])
+
+    monkeypatch.setattr(observability, '_client', Client())
+    service.hits = [hit('a', 0.90)]
+    calls = []
+    service._call_llm = lambda system, user: calls.append((system, user)) or v1_answer(
+        'O laudo esclarece [1].')
+    result = service.verify_claim_for_backend('Claim {{contexto}}')
+    assert result['verdict'] == 'matched'
+    assert calls[0][0] == 'Remote limit 500'
+    assert 'Claim Claim {{contexto}}' in calls[0][1]
+    assert 'Evidence [1]' in calls[0][1]
+
+
+def test_v1_uses_remote_condensation_prompt(service, monkeypatch):
+    from src import observability
+
+    class Client:
+        def get_prompt(self, name, **kwargs):
+            user = ('Claim {{query}}\nEvidence {{contexto}}\n'
+                    'Limit {{max_chars}}\nNarrative {{narrative}}')
+            return SimpleNamespace(name=name, version=8 if name == 'ml-v1-condensation' else 7,
+                type='chat', is_fallback=False,
+                prompt=[{'role': 'system', 'content': 'Remote {{max_chars}}'},
+                        {'role': 'user', 'content': user}])
+
+    monkeypatch.setattr(observability, '_client', Client())
+    service.hits = [hit('a', 0.90)]
+    calls = []
+
+    def respond(system, user):
+        calls.append((system, user))
+        return v1_answer('Palavra ' * 100 + '[1].') if len(calls) == 1 else v1_answer(
+            'Texto reduzido [1].')
+
+    service._call_llm = respond
+    result = service.verify_claim_for_backend('alegação curta')
+    assert result['counter_narrative'] == 'Texto reduzido [1].'
+    assert len(calls) == 2
+    assert 'Narrative Palavra ' in calls[1][1]
+    assert 'Limit 500' in calls[1][1]
+
+
+def test_v1_missing_prompt_abstains_without_model_call(service, monkeypatch):
+    from src import observability
+
+    class Missing:
+        def get_prompt(self, name, **kwargs):
+            raise RuntimeError('no staging label')
+
+    monkeypatch.setattr(observability, '_client', Missing())
+    service.hits = [hit('a', 0.90)]
+    service._call_llm = lambda system, user: pytest.fail('LLM must not be called')
+    result = service.verify_claim_for_backend('alegação curta')
+    assert result['verdict'] == 'insufficient_evidence'
+    assert result['sources'] == []
+
+
 def hit(
     doc,
     score,
@@ -620,16 +686,20 @@ def test_v1_generation_does_not_use_debunk_prompt_version(monkeypatch):
     service._search = lambda query, limit: [hit("a", 0.9)]
     monkeypatch.setattr(fcs.observability, "observation", lambda *args, **kwargs: _capture_version(kwargs))
     versions = []
+    linked_prompts = []
 
     def _capture_version(kwargs):
         from contextlib import nullcontext
         versions.append(kwargs.get("version"))
+        linked_prompts.append(kwargs.get('prompt'))
         return nullcontext(SimpleNamespace(update=lambda **kw: None))
 
     result = service.verify_claim_for_backend("alegação curta")
 
     assert result["verdict"] == "matched"
-    assert "verify-v1" in versions
+    assert "ml-v1-verification@1" in versions
+    assert any(getattr(prompt, 'name', None) == 'ml-v1-verification'
+               for prompt in linked_prompts)
 
 
 def test_v1_rejects_invented_url_in_narrative(service):
