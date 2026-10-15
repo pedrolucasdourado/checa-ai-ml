@@ -361,7 +361,8 @@ class FactCheckService:
         token = current_prompt.set(claim_prompt)
         try:
             raw = self._call_claim_analyzer(
-                claim_prompt.render_system(),
+                claim_prompt.render_system(message=user_message,
+                                           url_context=url_context or "(não disponível)"),
                 claim_prompt.render_user(message=user_message, url_context=url_context or "(não disponível)"),
             )
         finally:
@@ -496,7 +497,7 @@ class FactCheckService:
     ) -> tuple[dict[str, Any], bool]:
         context = _context_from_sources(sources, MAX_CONTEXT_CHARS)
         user_prompt = prompt.render_user(query=query, contexto=context)
-        system_prompt = prompt.render_system()
+        system_prompt = prompt.render_system(query=query, contexto=context)
         if max_explanation_chars is not None:
             system_prompt += (
                 "\nLimite o campo explanation a no máximo "
@@ -562,7 +563,7 @@ class FactCheckService:
             )
 
         prompt = prompt or load_prompt()
-        token = current_prompt.set(None)
+        token = current_prompt.set(prompt)
         try:
             decision, _ = self._synthesize(
                 query,
@@ -755,7 +756,7 @@ class FactCheckService:
         # Keep the mature grouping/truncation behavior from the local RAG path.
         local_sources = [_local_source(item) for item in unique_sources(used_evidences)]
         raw = self._call_llm(
-            prompt.render_system(),
+            prompt.render_system(query=claim, contexto=context),
             prompt.render_user(query=claim, contexto=context),
         )
         answer, structured = parse_answer(raw)

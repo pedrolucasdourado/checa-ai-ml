@@ -335,10 +335,34 @@ def test_load_prompt_ignores_fallback_object(lf):
         prompts.load_prompt()
 
 
-def test_deep_search_generation_is_not_linked_to_debunk_prompt(lf, service, monkeypatch):
+def test_deep_search_generation_links_evidence_flow_prompt(lf, service, monkeypatch):
     seen = {}
     monkeypatch.setattr(fcs, "perform_web_search", lambda q, max_results=5: [{"title": "t", "snippet": "s", "url": "https://w.example"}])
     service._call_llm_text = lambda s, u: seen.update(bundle=prompts.current_prompt.get()) or "síntese"
     service.hits = [_hit("a", fcs.SIMILARITY_THRESHOLD - 0.05)]
     assert service.verify_claim("alegação qualquer")["status"] == "deep_searched"
-    assert seen["bundle"] is None
+    assert seen["bundle"].name == "evidence-flow"
+    assert seen["bundle"].langfuse_prompt is not None
+
+
+def test_system_prompt_variables_are_rendered_for_claim_and_evidence(lf, service):
+    seen = {}
+
+    def get_prompt(name, **kwargs):
+        variables = ('{{message}} / {{url_context}}' if name == 'claim-analysis'
+                     else '{{query}} / {{contexto}}')
+        return SimpleNamespace(name=name, version=1, type='chat', is_fallback=False,
+                               prompt=[{'role': 'system', 'content': variables},
+                                       {'role': 'user', 'content': 'Responda em JSON.'}])
+
+    lf.get_prompt = get_prompt
+    service.hits = [_hit('a', 0.9)]
+    service._call_claim_analyzer = lambda s, u: seen.update(claim_system=s) or json.dumps({
+        'has_verifiable_claim': True, 'claim': 'alegação extraída',
+        'missing_context': [], 'explanation': 'Alegação verificável.'})
+    service._call_llm = lambda s, u: seen.update(evidence_system=s) or service.answer
+
+    assert service.verify_claim('alegação original')['status'] == 'matched'
+    assert seen['claim_system'].startswith('alegação original / ')
+    assert seen['evidence_system'].startswith('alegação extraída / ')
+    assert '{{' not in seen['claim_system'] + seen['evidence_system']
