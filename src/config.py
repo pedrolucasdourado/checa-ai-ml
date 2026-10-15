@@ -144,6 +144,14 @@ LLM_TEMPERATURE = _env_float("LLM_TEMPERATURE", 0.0)
 LLM_TIMEOUT_SECONDS = _env_float("LLM_TIMEOUT_SECONDS", 30.0)
 LLM_MAX_RETRIES = _env_int("LLM_MAX_RETRIES", 2)
 
+# ─── Classificador auxiliar (após RAG e busca web inconclusivos) ──────
+CLASSIFIER_ENABLED = _env_flag("CLASSIFIER_ENABLED", False)
+CLASSIFIER_TFIDF_MODEL_PATH = os.environ.get("CLASSIFIER_TFIDF_MODEL_PATH", "").strip()
+CLASSIFIER_BERTIMBAU_MODEL_PATH = os.environ.get("CLASSIFIER_BERTIMBAU_MODEL_PATH", "").strip()
+CLASSIFIER_BACKEND = os.environ.get("CLASSIFIER_BACKEND", "bertimbau").strip().lower()
+CLASSIFIER_BERTIMBAU_DEVICE = os.environ.get("CLASSIFIER_BERTIMBAU_DEVICE", "cpu").strip()
+CLASSIFIER_BERTIMBAU_BATCH_SIZE = _env_int("CLASSIFIER_BERTIMBAU_BATCH_SIZE", 16)
+
 
 def _env_bool(name: str, default: bool) -> bool:
     return os.environ.get(name, str(default)).strip().lower() in {"1", "true", "yes", "on"}

@@ -149,6 +149,19 @@ O importador usa agosto–setembro de 2018 em `calibration` e outubro em `test`,
 
 O comando gera JSON, Markdown e, quando houver avaliações, uma curva de confiabilidade em `reports/classifier-evaluation/`. Para TF-IDF, instale `requirements-classifier-evaluation.txt`; para BERTimbau, instale também `requirements-classifier-transformer.txt`. Consulte [Avaliação de classificadores](docs/CLASSIFIER_EVALUATION.md) para os arquivos esperados, metodologia e limites da recomendação.
 
+### Sinal auxiliar após RAG e busca web
+
+Opcionalmente, depois que RAG e a busca web não encontrarem fontes suficientes,
+o serviço pode usar BERTimbau (ou TF-IDF) como sinal auxiliar. Configure
+`CLASSIFIER_ENABLED=true`, `CLASSIFIER_BACKEND=bertimbau` e
+`CLASSIFIER_BERTIMBAU_MODEL_PATH` para ativá-lo. A API v1 retorna a mensagem
+`Foi identificado potencial alto de desinformação: 73%.` (com o percentual
+produzido pelo modelo), que o backend atual encaminha sem mudanças.
+
+Esse percentual descreve um padrão textual aprendido no corpus e não comprova a
+falsidade factual da alegação. Se o artefato estiver indisponível, o serviço
+mantém a resposta original de evidência insuficiente.
+
 Os totais históricos atribuídos ao FakeRecogna usam universos e filtros diferentes; veja a [auditoria dos números](docs/FAKERECOGNA_AUDIT.md). Eles não devem ser usados para comparar ou aprovar modelos sem igualar corpus, splits e métricas.
 
 ## Retrieval avançado, golden set e calibração

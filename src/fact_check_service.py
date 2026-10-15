@@ -74,6 +74,7 @@ from src.rag.hybrid import hybrid_rerank
 from src.rag.reranker import cross_encoder_rerank
 from src.rag import nli
 from src.rag.web_search import perform_web_search, validate_web_results
+from src.classifier_runtime import narrative as classifier_narrative
 from src.safety.injection import check_injection
 from src.safety.moderation import check_moderation
 from src.safety.validator import validate_output
@@ -1027,15 +1028,17 @@ class FactCheckService:
                 source_chars += added_chars
                 if len(sources) == 2:
                     break
-            if not sources:
-                return self._backend_result("insufficient_evidence", score)
-            response = self._backend_result(
-                "deep_searched", score, result["counter_narrative"],
-            )
-            response["sources"] = sources
-            return response
+            if sources:
+                response = self._backend_result(
+                    "deep_searched", score, result["counter_narrative"],
+                )
+                response["sources"] = sources
+                return response
         if result["status"] == "blocked":
             return self._backend_result("blocked", result["score"], result["counter_narrative"])
+        auxiliary = classifier_narrative(text)
+        if auxiliary:
+            return self._backend_result("deep_searched", score, auxiliary)
         return self._backend_result("insufficient_evidence", score)
 
     @staticmethod
