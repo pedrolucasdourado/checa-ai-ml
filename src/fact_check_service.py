@@ -870,13 +870,22 @@ class FactCheckService:
         result["sources"] = [_source_to_dict(by_url[source.url]) for source in result_sources]
         return result
 
-    def verify_claim_for_backend(self, text: str) -> dict:
-        """Return the grounded, compact v1 result consumed by the backend."""
+    def verify_claim_for_backend(
+        self, text: str, *, user_id: str | None = None, session_id: str | None = None
+    ) -> dict:
+        """Return the grounded, compact v1 result consumed by the backend.
+
+        `user_id`/`session_id` são pseudônimos do backend (nunca telefone): agrupam os traces
+        por pessoa/conversa no Langfuse para medir uso e custo.
+        """
         with observability.request_trace(
             "verify-v1",
             input=text,
+            user_id=user_id,
+            session_id=session_id,
             version="verify-v1",
-            tags=["prompt:verify-v1", f"llm:{LLM_MODEL}", f"corpus:{corpus_version()}"],
+            tags=["prompt:verify-v1", f"llm:{LLM_MODEL}", f"corpus:{corpus_version()}"]
+            + (["channel:whatsapp"] if user_id else []),
             metadata={"collection": COLLECTION_NAME, "threshold": SIMILARITY_THRESHOLD},
         ) as trace:
             result = self._verify_claim_for_backend(text)

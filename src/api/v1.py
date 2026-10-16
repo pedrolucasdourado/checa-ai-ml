@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 import hmac
 import logging
 import os
@@ -21,6 +22,10 @@ _verification_limiter = CapacityLimiter(4)
 
 class VerifyRequest(BaseModel):
     text: str = Field(min_length=1, max_length=10_000)
+    # Pseudônimo do contato (u_<hex>, HMAC feito pelo backend), só para agrupar traces por pessoa.
+    # O formato estrito recusa telefones por engano: dado pessoal não vai ao Langfuse (LGPD).
+    user_id: str | None = Field(default=None, pattern=r"^u_[0-9a-f]{16,64}$")
+    session_id: str | None = Field(default=None, pattern=r"^[A-Za-z0-9_-]{1,64}$")
 
     @field_validator("text")
     @classmethod
@@ -66,9 +71,13 @@ def require_internal_token(x_internal_token: str | None = Header(default=None)) 
 async def verify(body: VerifyRequest) -> VerifyResponse:
     try:
         service = await to_thread.run_sync(FactCheckService.get_instance)
+        tracking = {
+            key: value
+            for key, value in (("user_id", body.user_id), ("session_id", body.session_id))
+            if value
+        }
         result = await to_thread.run_sync(
-            service.verify_claim_for_backend,
-            body.text,
+            functools.partial(service.verify_claim_for_backend, body.text, **tracking),
             limiter=_verification_limiter,
         )
         return VerifyResponse.model_validate(result)

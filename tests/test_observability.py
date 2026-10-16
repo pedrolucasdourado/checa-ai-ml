@@ -403,3 +403,42 @@ def test_deep_search_synthesis_failure_logs_error_type_and_status(service, monke
     joined = " ".join(r.getMessage() for r in caplog.records)
     assert "ProviderError" in joined and "429" in joined
     assert "conteudo da alegacao" not in joined
+
+
+def test_backend_verify_trace_carries_pseudonym_session_and_channel_tag(service, monkeypatch):
+    captured = {}
+
+    @contextmanager
+    def fake_trace(name, **kwargs):
+        captured.update(kwargs, name=name)
+        yield SimpleNamespace(trace_id="t" * 32, update=lambda **kw: None)
+
+    monkeypatch.setattr(observability, "request_trace", fake_trace)
+    service._verify_claim_for_backend = lambda text: {
+        "counter_narrative": None, "verdict": "insufficient_evidence", "similarity_score": 0.1,
+    }
+
+    service.verify_claim_for_backend("boato", user_id="u_" + "a" * 20, session_id="sess-1")
+
+    assert captured["user_id"] == "u_" + "a" * 20
+    assert captured["session_id"] == "sess-1"
+    assert "channel:whatsapp" in captured["tags"]
+
+
+def test_backend_verify_trace_without_pseudonym_has_no_user_or_channel_tag(service, monkeypatch):
+    captured = {}
+
+    @contextmanager
+    def fake_trace(name, **kwargs):
+        captured.update(kwargs)
+        yield SimpleNamespace(trace_id="t" * 32, update=lambda **kw: None)
+
+    monkeypatch.setattr(observability, "request_trace", fake_trace)
+    service._verify_claim_for_backend = lambda text: {
+        "counter_narrative": None, "verdict": "insufficient_evidence", "similarity_score": 0.1,
+    }
+
+    service.verify_claim_for_backend("boato")
+
+    assert captured["user_id"] is None and captured["session_id"] is None
+    assert "channel:whatsapp" not in captured["tags"]

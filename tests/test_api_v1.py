@@ -23,12 +23,14 @@ def fake_service(monkeypatch):
     }
     service = SimpleNamespace(
         inputs=[],
+        tracking=[],
         _embedder=SimpleNamespace(dimension=1536),
         _qdrant=SimpleNamespace(get_collection=lambda name: SimpleNamespace(config=SimpleNamespace(params=SimpleNamespace(vectors=SimpleNamespace(size=1536))))),
     )
 
-    def verify(text):
+    def verify(text, **tracking):
         service.inputs.append(text)
+        service.tracking.append(tracking)
         return result.copy()
 
     service.verify_claim_for_backend = verify
@@ -228,3 +230,51 @@ async def test_health_and_ready_do_not_require_internal_token(client, fake_servi
     monkeypatch.setenv("INTERNAL_API_TOKEN", "secret-token")
     assert (await client.get("/health")).status_code == 200
     assert (await client.get("/ready")).status_code == 200
+
+
+PSEUDONYM = "u_" + "ab12cd34ef56ab78cd90"
+
+
+@pytest.mark.asyncio
+async def test_pseudonym_and_session_reach_the_service(client, fake_service):
+    service, _ = fake_service
+
+    response = await client.post(
+        "/api/v1/verify",
+        json={"text": "alegação", "user_id": PSEUDONYM, "session_id": "0b0e4a0e-5f8d-4a06"},
+    )
+
+    assert response.status_code == 200
+    assert service.tracking == [{"user_id": PSEUDONYM, "session_id": "0b0e4a0e-5f8d-4a06"}]
+
+
+@pytest.mark.asyncio
+async def test_request_without_tracking_is_unchanged(client, fake_service):
+    service, _ = fake_service
+
+    response = await client.post("/api/v1/verify", json={"text": "alegação"})
+
+    assert response.status_code == 200
+    assert service.tracking == [{}]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "user_id",
+    ["5563984267474", "5563984267474@s.whatsapp.net", "+55 63 98426-7474", "u_xyz", "u_" + "a" * 8],
+)
+async def test_raw_phone_or_malformed_user_id_is_rejected(client, fake_service, user_id):
+    service, _ = fake_service
+
+    response = await client.post("/api/v1/verify", json={"text": "alegação", "user_id": user_id})
+
+    assert response.status_code == 422
+    assert service.inputs == []
+
+
+@pytest.mark.asyncio
+async def test_malformed_session_id_is_rejected(client, fake_service):
+    response = await client.post(
+        "/api/v1/verify", json={"text": "alegação", "session_id": "tem espaço"}
+    )
+    assert response.status_code == 422
