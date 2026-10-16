@@ -47,6 +47,8 @@ class VerifyResponse(BaseModel):
     similarity_score: float | None
     counter_narrative: str | None
     sources: list[VerificationSource]
+    conclusion: Literal["sustentada", "contradita", "inconclusiva"] | None = None
+    evidence_sufficient: bool | None = None
 
 
 def require_internal_token(x_internal_token: str | None = Header(default=None)) -> None:
@@ -66,6 +68,7 @@ def require_internal_token(x_internal_token: str | None = Header(default=None)) 
 @router.post(
     "/api/v1/verify",
     response_model=VerifyResponse,
+    response_model_exclude_none=True,
     dependencies=[Depends(require_internal_token)],
 )
 async def verify(body: VerifyRequest) -> VerifyResponse:
