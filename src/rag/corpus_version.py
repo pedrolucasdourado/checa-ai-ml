@@ -17,6 +17,7 @@ from pathlib import Path
 from src.config import PROJECT_ROOT
 
 DEFAULT_CORPUS_FILE = PROJECT_ROOT / "data" / "processed" / "fact_checks_all.jsonl"
+PROCESSED_DIRECTORY_POINTER = PROJECT_ROOT / "data" / "processed.dvc"
 UNKNOWN = "unknown"
 _MD5_RE = re.compile(r"^\s*-?\s*md5:\s*([0-9a-f]{32})", re.MULTILINE)
 
@@ -25,9 +26,15 @@ def corpus_version(corpus_file: Path | str | None = None) -> str:
     override = os.environ.get("CORPUS_VERSION", "").strip()
     if override:
         return override
-    pointer = Path(str(corpus_file or DEFAULT_CORPUS_FILE) + ".dvc")
-    try:
-        match = _MD5_RE.search(pointer.read_text(encoding="utf-8"))
-    except OSError:
-        return UNKNOWN
-    return match.group(1)[:12] if match else UNKNOWN
+    requested = Path(corpus_file or DEFAULT_CORPUS_FILE)
+    pointers = [Path(str(requested) + ".dvc")]
+    if requested == DEFAULT_CORPUS_FILE:
+        pointers.append(PROCESSED_DIRECTORY_POINTER)
+    for pointer in pointers:
+        try:
+            match = _MD5_RE.search(pointer.read_text(encoding="utf-8"))
+        except OSError:
+            continue
+        if match:
+            return match.group(1)[:12]
+    return UNKNOWN
