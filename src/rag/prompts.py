@@ -206,25 +206,30 @@ def _local_bundle(spec: PromptSpec) -> PromptBundle:
 
 
 def load_prompt() -> PromptBundle:
-    """Resolve o prompt de síntese evidencial no Langfuse ou no fallback local."""
+    """Resolve o prompt de síntese evidencial no Langfuse (local só com Langfuse desligado)."""
     return _load_prompt(EVIDENCE_PROMPT)
 
 
 def load_claim_prompt() -> PromptBundle:
-    """Resolve o prompt de extração de alegação no Langfuse ou no fallback local."""
+    """Resolve o prompt de extração de alegação no Langfuse (local só com Langfuse desligado)."""
     return _load_prompt(CLAIM_PROMPT)
 
 
 def _load_prompt(spec: PromptSpec) -> PromptBundle:
-    messages = spec.messages()
-    fetched = observability.fetch_chat_prompt(spec.name, PROMPT_LABEL, messages)
+    fetched = observability.fetch_chat_prompt(spec.name, PROMPT_LABEL)
     if fetched is None:
+        # Langfuse desligado de propósito (dev/testes): o texto local é a fonte.
         return _local_bundle(spec)
     lf_prompt, remote = fetched
     by_role = {m["role"]: m["content"] for m in remote if isinstance(m, dict) and "role" in m}
     if "system" not in by_role or "user" not in by_role:
-        log.warning("Prompt '%s' no Langfuse sem mensagens system+user; usando o local.", spec.name)
-        return _local_bundle(spec)
+        log.error(
+            "Prompt '%s' (label=%s) no Langfuse sem mensagens system+user (roles=%s).",
+            spec.name, PROMPT_LABEL, sorted(by_role),
+        )
+        raise observability.PromptUnavailableError(
+            spec.name, PROMPT_LABEL, f"missing_system_or_user roles={sorted(by_role)}"
+        )
     return PromptBundle(
         spec.name,
         by_role["system"],

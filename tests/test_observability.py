@@ -37,6 +37,11 @@ class FakeLangfuse:
     def start_as_current_observation(self, *, name, as_type="span", **kwargs):
         return self._cm(name, as_type, kwargs)
 
+    def get_prompt(self, name, **kw):
+        # Langfuse "publicado" com o mesmo texto dos prompts locais.
+        spec = {s.name: s for s in prompts.prompt_specs()}[name]
+        return SimpleNamespace(version=1, is_fallback=False, prompt=spec.messages())
+
     def get_current_trace_id(self):
         return TRACE_ID
 
@@ -287,8 +292,10 @@ def test_load_prompt_uses_langfuse_version_and_links_generation(lf, service):
             {"role": "user", "content": "Pergunta: {{query}} | {{contexto}}"},
         ],
     )
-    fallback_claim = SimpleNamespace(version=3, is_fallback=True, prompt=[])
-    lf.get_prompt = lambda name, **kw: fallback_claim if name == "claim-analysis" else remote
+    remote_claim = SimpleNamespace(
+        version=3, is_fallback=False, prompt=prompts.CLAIM_PROMPT.messages()
+    )
+    lf.get_prompt = lambda name, **kw: remote_claim if name == "claim-analysis" else remote
     service.hits = [_hit("a", 0.9)]
     sent = {}
     service._call_llm = lambda s, u: sent.update(system=s, user=u) or "ok"
@@ -318,9 +325,26 @@ def test_load_claim_prompt_has_independent_langfuse_version(lf):
     )
 
 
-def test_load_prompt_ignores_fallback_object(lf):
+def test_load_prompt_raises_when_langfuse_returns_fallback_object(lf):
     lf.get_prompt = lambda name, **kw: SimpleNamespace(version=1, is_fallback=True, prompt=[])
-    assert prompts.load_prompt().source == "local"
+    with pytest.raises(observability.PromptUnavailableError) as exc:
+        prompts.load_prompt()
+    assert exc.value.reason == "sdk_returned_fallback"
+
+
+def test_load_prompt_raises_with_details_when_label_missing(lf, caplog):
+    class NotFound(Exception):
+        status_code = 404
+        body = {"message": "Prompt not found: 'evidence-flow' with label 'production'"}
+
+    def boom(name, **kw):
+        raise NotFound()
+
+    lf.get_prompt = boom
+    with caplog.at_level("ERROR"), pytest.raises(observability.PromptUnavailableError) as exc:
+        prompts.load_prompt()
+    assert "status=404" in exc.value.reason
+    assert any("label=" in r.getMessage() and "404" in r.getMessage() for r in caplog.records)
 
 
 def test_deep_search_generation_is_not_linked_to_debunk_prompt(service, monkeypatch):
@@ -330,3 +354,52 @@ def test_deep_search_generation_is_not_linked_to_debunk_prompt(service, monkeypa
     service.hits = [_hit("a", fcs.SIMILARITY_THRESHOLD - 0.05)]
     assert service.verify_claim("alegação qualquer")["status"] == "deep_searched"
     assert seen["bundle"] is None
+
+
+def test_load_prompt_raises_when_remote_prompt_misses_user_role(lf):
+    lf.get_prompt = lambda name, **kw: SimpleNamespace(
+        version=4, is_fallback=False, prompt=[{"role": "system", "content": "só system"}]
+    )
+    with pytest.raises(observability.PromptUnavailableError) as exc:
+        prompts.load_prompt()
+    assert "missing_system_or_user" in exc.value.reason
+
+
+def test_fetch_chat_prompt_raises_when_keys_set_but_client_failed(monkeypatch):
+    monkeypatch.setattr(observability, "_client", None)
+    monkeypatch.setattr(observability, "_client_failed", True)
+    monkeypatch.setattr(observability, "LANGFUSE_ENABLED", True)
+    monkeypatch.setenv("LANGFUSE_PUBLIC_KEY", "pk")
+    monkeypatch.setenv("LANGFUSE_SECRET_KEY", "sk")
+    with pytest.raises(observability.PromptUnavailableError) as exc:
+        observability.fetch_chat_prompt("evidence-flow", "production")
+    assert exc.value.reason == "client_init_failed"
+
+
+def test_fetch_chat_prompt_returns_none_when_langfuse_is_disabled(monkeypatch):
+    monkeypatch.setattr(observability, "_client", None)
+    monkeypatch.setattr(observability, "_client_failed", True)
+    monkeypatch.delenv("LANGFUSE_PUBLIC_KEY", raising=False)
+    monkeypatch.delenv("LANGFUSE_SECRET_KEY", raising=False)
+    assert observability.fetch_chat_prompt("evidence-flow", "production") is None
+
+
+def test_deep_search_synthesis_failure_logs_error_type_and_status(service, monkeypatch, caplog):
+    class ProviderError(Exception):
+        status_code = 429
+
+    monkeypatch.setattr(
+        fcs, "perform_web_search",
+        lambda q, max_results=5: [{"title": "t", "snippet": "s", "url": "https://w.example"}],
+    )
+
+    def boom(*a, **kw):
+        raise ProviderError("conteudo da alegacao que nao deve vazar")
+
+    service._call_llm_text = boom
+    service.hits = [_hit("a", fcs.SIMILARITY_THRESHOLD - 0.05)]
+    with caplog.at_level("ERROR"):
+        service.verify_claim("boato")
+    joined = " ".join(r.getMessage() for r in caplog.records)
+    assert "ProviderError" in joined and "429" in joined
+    assert "conteudo da alegacao" not in joined
