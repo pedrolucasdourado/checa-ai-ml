@@ -29,7 +29,7 @@ from src.config import PROMPT_LABEL
 log = logging.getLogger("checa-ai.prompts")
 
 EVIDENCE_PROMPT_NAME = "evidence-flow"
-EVIDENCE_PROMPT_VERSION = "evidence-flow-v5"
+EVIDENCE_PROMPT_VERSION = "evidence-flow-v4"
 CLAIM_PROMPT_NAME = "claim-analysis"
 CLAIM_PROMPT_VERSION = "claim-analysis-v2"
 
@@ -95,10 +95,6 @@ Exemplos de fronteira:
 - Alegação diz que todos os eventos têm uma causa, e a fonte apresenta outras causas concretas:
   contradita.
 - A fonte não menciona o evento alegado: inconclusiva, nunca contradita apenas pelo silêncio.
-Para alegações sobre fala, opinião ou posição atribuída a uma pessoa, uma declaração direta
-da mesma pessoa sobre o tema sustenta a alegação. Não a confunda com uma decisão formal de
-governo, partido, órgão ou aliado: se a fonte confirmar apenas a posição pessoal, explique
-essa distinção, mas não marque a alegação como inconclusiva por faltar uma decisão oficial.
 4. Em conclusão inconclusiva, "evidence_sufficient" deve ser false. Sem fontes utilizáveis, \
 use também "evidence_level" igual a "ausente".
 5. Toda afirmação factual da explicação deve vir das evidências. Não complete lacunas de memória.

@@ -31,10 +31,10 @@ def _golden_by_id() -> dict[str, dict]:
     return {row["id"]: row for row in rows}
 
 
-def test_evidence_prompt_v5_encodes_inconclusive_boundary() -> None:
+def test_evidence_prompt_v4_encodes_inconclusive_boundary() -> None:
     normalized = " ".join(SYSTEM_PROMPT.casefold().split())
 
-    assert EVIDENCE_PROMPT_VERSION == "evidence-flow-v5"
+    assert EVIDENCE_PROMPT_VERSION == "evidence-flow-v4"
     assert "ausência de confirmação" in normalized
     assert "silêncio da fonte" in normalized
     assert "entidade/atribuição" in normalized
