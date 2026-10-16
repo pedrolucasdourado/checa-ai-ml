@@ -79,6 +79,10 @@ jobs:
           PROMPT_LABEL: ${{ vars.PROMPT_LABEL || 'production' }}
           LLM_MODEL: ${{ vars.LLM_MODEL }}
           DOMAIN: ${{ vars.DOMAIN }}
+          CLASSIFIER_ENABLED: ${{ vars.CLASSIFIER_ENABLED || 'false' }}
+          CLASSIFIER_BACKEND: ${{ vars.CLASSIFIER_BACKEND || 'bertimbau' }}
+          CLASSIFIER_BERTIMBAU_MODEL_PATH: ${{ vars.CLASSIFIER_BERTIMBAU_MODEL_PATH || '/app/models/best_model_transformer' }}
+          CLASSIFIER_MODELS_HOST_PATH: ${{ vars.CLASSIFIER_MODELS_HOST_PATH || '/opt/checa-ai/models' }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_ACTOR: ${{ github.actor }}
           REPO_URL: https://github.com/${{ github.repository }}.git
@@ -100,7 +104,9 @@ jobs:
           # funciona direto na VM, sem flags (o Compose lê o .env da pasta sozinho).
           {
             for k in OPENAI_API_KEY INTERNAL_API_TOKEN TAVILY_API_KEY LANGFUSE_PUBLIC_KEY LANGFUSE_SECRET_KEY \
-                     LANGFUSE_BASE_URL LANGFUSE_TRACING_ENVIRONMENT PROMPT_LABEL LLM_MODEL DOMAIN; do
+                     LANGFUSE_BASE_URL LANGFUSE_TRACING_ENVIRONMENT PROMPT_LABEL LLM_MODEL DOMAIN \
+                     CLASSIFIER_ENABLED CLASSIFIER_BACKEND CLASSIFIER_BERTIMBAU_MODEL_PATH \
+                     CLASSIFIER_MODELS_HOST_PATH; do
               [ -n "${!k}" ] && printf '%s=%s\n' "$k" "${!k}"
             done
             printf 'APP_IMAGE=%s\n' "$IMAGE"
