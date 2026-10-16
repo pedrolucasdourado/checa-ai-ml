@@ -69,6 +69,30 @@ Se nenhuma fonte válida puder ser identificada, a v1 retorna
 é bloqueada antes da busca. O backend irmão precisa aceitar os quatro
 vereditos antes de consumir este contrato ampliado.
 
+### Classificador opcional em produção
+
+O BERTimbau é um sinal auxiliar: ele só é chamado pelo endpoint interno
+`/api/v1/verify` depois que a recuperação e a busca web não encontram fontes
+utilizáveis. Ele não substitui uma conclusão baseada em evidências e não é
+usado pela interface `/api/debunk`.
+
+Os pesos não são versionados nem incluídos na imagem. Antes de ativar o
+recurso na VM, copie o diretório `best_model_transformer` para
+`/opt/checa-ai/models/best_model_transformer` (ou escolha outro diretório e
+configure `CLASSIFIER_MODELS_HOST_PATH`). Em *Settings → Secrets and variables
+→ Actions → Variables*, configure:
+
+```text
+CLASSIFIER_ENABLED=true
+CLASSIFIER_BACKEND=bertimbau
+CLASSIFIER_BERTIMBAU_MODEL_PATH=/app/models/best_model_transformer
+CLASSIFIER_MODELS_HOST_PATH=/opt/checa-ai/models
+```
+
+O deploy monta esse diretório como somente leitura em `/app/models`. Se os
+pesos estiverem ausentes ou não puderem ser carregados, a requisição continua
+com `insufficient_evidence`; o serviço não inventa um veredito.
+
 ### Teste via CLI (sem servidor)
 
 ```bash

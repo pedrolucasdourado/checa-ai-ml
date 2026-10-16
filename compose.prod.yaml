@@ -24,6 +24,13 @@ services:
     env_file: .env
     environment:
       QDRANT_URL: http://qdrant:6333
+      CLASSIFIER_ENABLED: ${CLASSIFIER_ENABLED:-false}
+      CLASSIFIER_BACKEND: ${CLASSIFIER_BACKEND:-bertimbau}
+      CLASSIFIER_BERTIMBAU_MODEL_PATH: ${CLASSIFIER_BERTIMBAU_MODEL_PATH:-}
+    volumes:
+      # Weights stay outside Git and the image.  Provision this directory on
+      # the VM before enabling the classifier.
+      - ${CLASSIFIER_MODELS_HOST_PATH:-/opt/checa-ai/models}:/app/models:ro
     networks:
       default: {}
       shared:
