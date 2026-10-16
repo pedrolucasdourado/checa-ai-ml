@@ -42,9 +42,6 @@ _UNTRUSTED_SOCIAL_DOMAINS = (
     "youtube.com",
     "youtu.be",
 )
-_UNTRUSTED_REFERENCE_DOMAINS = (
-    "wikipedia.org",
-)
 _OPINION_PATH_MARKERS = (
     "/opiniao/",
     "/opinion/",
@@ -72,10 +69,6 @@ def _is_untrusted_social_domain(domain: str) -> bool:
     return any(domain == item or domain.endswith(f".{item}") for item in _UNTRUSTED_SOCIAL_DOMAINS)
 
 
-def _is_untrusted_reference_domain(domain: str) -> bool:
-    return any(domain == item or domain.endswith(f".{item}") for item in _UNTRUSTED_REFERENCE_DOMAINS)
-
-
 def _is_opinion_page(url: str) -> bool:
     path = (urlsplit(url).path or "").lower()
     return any(marker in path for marker in _OPINION_PATH_MARKERS)
@@ -93,7 +86,6 @@ def validate_web_results(raw_results: list[dict], max_results: int = 5) -> list[
             not title
             or not excerpt
             or _is_untrusted_social_domain(domain)
-            or _is_untrusted_reference_domain(domain)
             or _is_opinion_page(url)
             or injection_risk(f"{title}\n{excerpt}") == "high"
         ):

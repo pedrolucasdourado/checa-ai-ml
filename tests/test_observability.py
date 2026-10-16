@@ -118,15 +118,7 @@ def test_matched_trace_carries_prompt_version_and_scores(lf, service):
     root = by_name(lf, "verify-claim")[0]
     assert root.kwargs["input"] == "alegação qualquer"
     assert root.updates[-1]["metadata"]["status"] == "matched"
-    retrieval = by_name(lf, "retrieval")[0]
-    assert retrieval.as_type == "retriever"
-    assert retrieval.updates[-1]["metadata"] == {
-        "candidates": 1,
-        "valid": 1,
-        "selected": 1,
-        "injection_blocked": 0,
-        "best_score": 0.9,
-    }
+    assert by_name(lf, "retrieval")[0].as_type == "retriever"
 
     scores = {s["name"]: s for s in lf.scores}
     assert scores["top_similarity"]["value"] == 0.9

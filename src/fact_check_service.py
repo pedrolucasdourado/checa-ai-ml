@@ -379,10 +379,8 @@ class FactCheckService:
                 output=[{"url": item.url, "score": round(item.score, 4)} for item in selected],
                 metadata={
                     "candidates": len(hits),
-                    "valid": len(valid),
                     "selected": len(selected),
                     "injection_blocked": len(blocked),
-                    "best_score": max((item.score for item in selected), default=None),
                 },
             )
         return selected

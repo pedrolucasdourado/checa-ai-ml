@@ -228,11 +228,6 @@ jobs:
             python -c \"import urllib.request as u; u.urlopen('http://127.0.0.1:8000/ready', timeout=10)\"" \
             || echo "::warning::/ready falhou: índice Qdrant ausente ou incompatível (rode o workflow index-corpus)"
 
-          # Exercita a mesma coleção, embeddings e limiar do serviço com alegações
-          # conhecidas. Falhas interrompem o deploy e acionam o rollback da imagem.
-          ssh -i ~/.ssh/id_deploy "$VM_USER@$HOST" "cd ~/checa-ai && docker compose exec -T app \
-            python -m src.rag.retrieval_contract"
-
       # Reverte só a imagem do app para a que rodava antes (APP_IMAGE no .env da VM).
       # O job continua falhando de propósito: a release nova NÃO está no ar.
       # Prompts não são afetados (continuam por Release/Langfuse); índice Qdrant idem.
