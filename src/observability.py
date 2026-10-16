@@ -192,24 +192,60 @@ def request_trace(
                 log.exception("Falha ao fechar atributos do trace '%s'.", name)
 
 
-def fetch_chat_prompt(name: str, label: str, fallback: list[dict]) -> tuple[Any, list[dict]] | None:
+class PromptUnavailableError(RuntimeError):
+    """Langfuse está habilitado mas o prompt/label pedido não pôde ser obtido."""
+
+    def __init__(self, name: str, label: str, reason: str):
+        super().__init__(f"prompt={name!r} label={label!r} reason={reason}")
+        self.name, self.label, self.reason = name, label, reason
+
+
+def _langfuse_expected() -> bool:
+    """True se há chaves + LANGFUSE_ENABLED: aí o Langfuse é a fonte de verdade."""
+    return bool(
+        LANGFUSE_ENABLED
+        and os.environ.get("LANGFUSE_PUBLIC_KEY")
+        and os.environ.get("LANGFUSE_SECRET_KEY")
+    )
+
+
+def fetch_chat_prompt(name: str, label: str) -> tuple[Any, list[dict]] | None:
     """
     Busca um prompt de chat no Langfuse (com cache do SDK). Retorna
-    (objeto_prompt, mensagens_sem_compilar) ou None se desligado, indisponível
-    ou se o SDK devolveu o fallback (prompt/label inexistente).
+    (objeto_prompt, mensagens_sem_compilar).
+
+    Retorna None SOMENTE quando o Langfuse está desligado de propósito (sem chaves ou
+    LANGFUSE_ENABLED=false: dev/testes). Com o Langfuse habilitado, prompt/label ausente
+    ou erro de rede levanta PromptUnavailableError com o motivo (sem fallback silencioso).
     """
     client = _get_client()
+    base_url = os.environ.get("LANGFUSE_BASE_URL", "(default)")
     if client is None:
+        if _langfuse_expected():
+            log.error(
+                "Langfuse esperado (chaves presentes) mas o cliente não inicializou; "
+                "prompt '%s' (label=%s, base_url=%s) indisponível.", name, label, base_url,
+            )
+            raise PromptUnavailableError(name, label, "client_init_failed")
         return None
     try:
-        prompt = client.get_prompt(name, label=label, type="chat", fallback=fallback)
-        if getattr(prompt, "is_fallback", False):
-            log.warning("Prompt '%s' (label=%s) indisponível no Langfuse; usando o local.", name, label)
-            return None
-        return prompt, list(prompt.prompt)
-    except Exception:  # noqa: BLE001
-        log.exception("Falha ao buscar o prompt '%s' no Langfuse.", name)
-        return None
+        # Sem `fallback=`: o SDK levanta quando o prompt/label não existe.
+        prompt = client.get_prompt(name, label=label, type="chat")
+    except Exception as exc:  # noqa: BLE001
+        status = getattr(exc, "status_code", None)
+        body = getattr(exc, "body", None)
+        reason = f"{type(exc).__name__} status={status} body={str(body)[:200]!s}"
+        log.error(
+            "Langfuse: falha ao buscar prompt '%s' label=%s base_url=%s -> %s. "
+            "Se for 404, o label ainda não foi promovido (Release / sync_prompts --promote).",
+            name, label, base_url, reason,
+        )
+        raise PromptUnavailableError(name, label, reason) from exc
+    if getattr(prompt, "is_fallback", False):
+        log.error("Langfuse devolveu fallback para '%s' label=%s base_url=%s.", name, label, base_url)
+        raise PromptUnavailableError(name, label, "sdk_returned_fallback")
+    log.info("Langfuse prompt resolvido name=%s label=%s version=%s", name, label, prompt.version)
+    return prompt, list(prompt.prompt)
 
 
 def create_chat_prompt(

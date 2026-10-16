@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import os
 import re
+import sys
 from contextvars import ContextVar
 from typing import Any
 from urllib.parse import urlsplit
@@ -589,8 +590,13 @@ class FactCheckService:
                     include_source_credit=not include_model_sources,
                 )
         except Exception:
-            # Evita registrar mensagens de provedores que possam repetir a alegação.
-            logger.warning("Síntese do fallback web falhou.")
+            # Não registra a mensagem do provedor (pode repetir a alegação), mas registra
+            # tipo e status para diagnosticar (quota, 401, timeout, schema...).
+            exc = sys.exc_info()[1]
+            logger.error(
+                "Síntese do fallback web falhou: error=%s status=%s sources=%d",
+                type(exc).__name__, getattr(exc, "status_code", None), len(web_sources),
+            )
             return self._abstention(
                 score,
                 abstention_evidences,
