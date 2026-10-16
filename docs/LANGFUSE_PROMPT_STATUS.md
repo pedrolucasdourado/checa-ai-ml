@@ -7,7 +7,7 @@ O serviço mantém dois prompts independentes e auditáveis:
 | `evidence-flow` | `evidence-flow-v4` (candidato; não promover sem held-out independente) | registrado em `src/rag/prompts.lock.json` |
 | `claim-analysis` | `claim-analysis-v1` | registrado em `src/rag/prompts.lock.json` |
 
-Ambos têm fallback local, são sincronizados pelo mesmo `scripts/sync_prompts.py`
+Os textos locais são a semente do `sync_prompts.py` e só são usados em runtime com o Langfuse desligado (dev/testes). Com o Langfuse habilitado, prompt/label ausente gera `PromptUnavailableError` (sem fallback silencioso). Ambos são sincronizados pelo mesmo `scripts/sync_prompts.py`
 e aparecem nos metadados do trace (versão e hash). A extração de alegação usa seu
 próprio bundle durante a chamada à LLM; ela não herda o prompt de síntese.
 
