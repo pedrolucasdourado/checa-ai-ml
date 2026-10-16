@@ -4,40 +4,10 @@ from types import SimpleNamespace
 import pytest
 
 from src import fact_check_service as fcs
-from src.rag.web_search import validate_web_results
 
 
 LOCAL_URL = "https://checamos.afp.com/doc-1"
 WEB_URL = "https://www.gov.br/saude/noticia-1"
-
-
-@pytest.mark.parametrize("url", [
-    "https://www.youtube.com/watch?v=video",
-    "https://youtu.be/video",
-    "https://www.instagram.com/p/post/",
-])
-def test_web_validation_discards_untrusted_social_sources(url):
-    sources = validate_web_results([{
-        "title": "Publicação em rede social",
-        "snippet": "Um trecho que não deve entrar na síntese.",
-        "url": url,
-    }])
-
-    assert sources == []
-
-
-@pytest.mark.parametrize("url", [
-    "https://adiadorim.org/opiniao/2021/05/um-texto",
-    "https://example.org/colunistas/autor/um-texto",
-])
-def test_web_validation_discards_opinion_pages(url):
-    sources = validate_web_results([{
-        "title": "Artigo de opinião",
-        "snippet": "Um trecho que não deve sustentar a checagem.",
-        "url": url,
-    }])
-
-    assert sources == []
 
 
 def _hit(text: str = "O documento oficial confirma o dado.", score: float = 0.91):

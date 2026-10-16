@@ -1001,16 +1001,11 @@ class FactCheckService:
             logger.warning("Blocked v1 injection: pattern=%s", inj_result.pattern)
             return self._backend_result("blocked", None, SAFE_INJECTION_REFUSAL_MESSAGE)
 
-        claim_analysis = self._analyze_claim(text, prompt=load_claim_prompt())
-        if not claim_analysis.has_verifiable_claim or not claim_analysis.claim:
-            return self._backend_result("insufficient_evidence", 0.0)
-
-        claim = claim_analysis.claim
-        evidences = self._retrieve(claim)
+        evidences = self._retrieve(text)
         best_score = max((ev.score for ev in evidences), default=0.0)
         result = self._backend_result("insufficient_evidence", best_score)
         if best_score < SIMILARITY_THRESHOLD:
-            return self._backend_fallback(claim, best_score, evidences)
+            return self._backend_fallback(text, best_score, evidences)
 
         selected_sources: list[Evidence] = []
         selected_urls: set[str] = set()
@@ -1038,7 +1033,7 @@ class FactCheckService:
         selected_ids = {ev.document_id for ev in selected_sources}
         selected = [ev for ev in evidences if ev.document_id in selected_ids]
         context, used = build_context(selected, MAX_CONTEXT_CHARS)
-        prompt = _BACKEND_USER_PROMPT.format(query=claim, contexto=context)
+        prompt = _BACKEND_USER_PROMPT.format(query=text, contexto=context)
         system_prompt = _BACKEND_SYSTEM_PROMPT.format(max_chars=narrative_limit)
         token = _generation_version.set("verify-v1")
         try:
@@ -1047,7 +1042,7 @@ class FactCheckService:
             _generation_version.reset(token)
         answer, _ = parse_answer(raw)
         if not answer.laudos_tratam_alegacao:
-            return self._backend_fallback(claim, best_score, used)
+            return self._backend_fallback(text, best_score, used)
         narrative = answer.texto.strip()
         if len(narrative) > narrative_limit:
             condensation_prompt = (
@@ -1062,7 +1057,7 @@ class FactCheckService:
                 _generation_version.reset(token)
             answer, _ = parse_answer(raw)
             if not answer.laudos_tratam_alegacao:
-                return self._backend_fallback(claim, best_score, used)
+                return self._backend_fallback(text, best_score, used)
             narrative = answer.texto.strip()
         narrative = _CHUNK_CITATION_PATTERN.sub(r"[\1]", narrative)
         if len(narrative) > narrative_limit:

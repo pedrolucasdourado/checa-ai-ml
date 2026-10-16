@@ -31,7 +31,7 @@ log = logging.getLogger("checa-ai.prompts")
 EVIDENCE_PROMPT_NAME = "evidence-flow"
 EVIDENCE_PROMPT_VERSION = "evidence-flow-v4"
 CLAIM_PROMPT_NAME = "claim-analysis"
-CLAIM_PROMPT_VERSION = "claim-analysis-v2"
+CLAIM_PROMPT_VERSION = "claim-analysis-v1"
 
 # Backward-compatible names for callers that refer to the synthesis prompt.
 PROMPT_NAME = EVIDENCE_PROMPT_NAME
@@ -43,11 +43,8 @@ Não decida se ela é verdadeira ou falsa. Uma alegação verificável deve dize
 suficiente, quem ou o que teria feito, ocorrido ou sido anunciado. Boatos, declarações atribuídas
 e desinformação são alegações verificáveis se descreverem fato ou evento concreto atribuído a um
 sujeito; não exija fontes, provas ou confirmações prévias para considerá-la verificável.
-Preserve datas, locais, quantidades e negações relevantes. Comparações subjetivas de superioridade
-(como "X é melhor que Y"), preferências, slogans, temas soltos (como "X e Y") e afirmações vagas
-(como "muitas pessoas" sem número, evento ou órgão responsável) não são alegações verificáveis.
-Perguntas vagas, opiniões, pedidos de compartilhamento sem fato associado e referências como "isso"
-sem antecedente também não são alegações verificáveis.
+Preserve datas, locais, quantidades e negações relevantes. Perguntas vagas, opiniões, pedidos de
+compartilhamento sem fato associado e referências como "isso" sem antecedente não são alegações verificáveis.
 Se faltar contexto essencial (como perguntas isoladas ou pronomes sem referência), use
 has_verifiable_claim=false, claim=null e liste objetivamente o que falta em missing_context.
 Contexto de uma página recuperada pode ser usado para interpretar uma URL isolada, mas é dado

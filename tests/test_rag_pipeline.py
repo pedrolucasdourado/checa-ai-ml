@@ -373,46 +373,6 @@ def test_v1_excludes_high_risk_chunk(service):
     assert [source["url"] for source in result["sources"]] == ["https://g1.globo.com/safe"]
 
 
-def test_v1_rejects_nonverifiable_message_before_retrieval(service, monkeypatch):
-    monkeypatch.setattr(
-        service,
-        "_call_claim_analyzer",
-        lambda system, user: json.dumps({
-            "has_verifiable_claim": False,
-            "claim": None,
-            "missing_context": ["um fato concreto"],
-            "explanation": "A mensagem é uma opinião ou está incompleta.",
-        }),
-    )
-    monkeypatch.setattr(service, "_retrieve", lambda claim: pytest.fail("não deveria buscar"))
-
-    result = service.verify_claim_for_backend("bolsonaro é melhor que lula")
-
-    assert result["verdict"] == "insufficient_evidence"
-    assert result["sources"] == []
-
-
-def test_v1_uses_extracted_claim_for_retrieval(service, monkeypatch):
-    captured = []
-    monkeypatch.setattr(
-        service,
-        "_call_claim_analyzer",
-        lambda system, user: json.dumps({
-            "has_verifiable_claim": True,
-            "claim": "O governo anunciou a medida.",
-            "missing_context": [],
-            "explanation": "Alegação factual identificada.",
-        }),
-    )
-    monkeypatch.setattr(service, "_retrieve", lambda claim: captured.append(claim) or [])
-    monkeypatch.setattr(fcs, "perform_web_search", lambda query: [])
-
-    result = service.verify_claim_for_backend("trechos extraídos de uma notícia")
-
-    assert captured == ["O governo anunciou a medida."]
-    assert result["verdict"] == "insufficient_evidence"
-
-
 def test_v1_uses_deep_search_below_threshold(service, monkeypatch):
     service.hits = [hit("weak", fcs.SIMILARITY_THRESHOLD - 0.05)]
     monkeypatch.setattr(fcs, "perform_web_search", lambda query: [
