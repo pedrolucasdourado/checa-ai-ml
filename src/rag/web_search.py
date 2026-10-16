@@ -31,6 +31,24 @@ _RECOGNIZED_NEWS_DOMAINS = (
     "reuters.com",
     "uol.com.br",
 )
+_UNTRUSTED_SOCIAL_DOMAINS = (
+    "facebook.com",
+    "instagram.com",
+    "kwai.com",
+    "threads.net",
+    "tiktok.com",
+    "twitter.com",
+    "x.com",
+    "youtube.com",
+    "youtu.be",
+)
+_OPINION_PATH_MARKERS = (
+    "/opiniao/",
+    "/opinion/",
+    "/colunistas/",
+    "/colunas/",
+    "/blogs/",
+)
 
 
 def _domain(url: str) -> str:
@@ -47,6 +65,15 @@ def _trust_rank(domain: str) -> int:
     return 3
 
 
+def _is_untrusted_social_domain(domain: str) -> bool:
+    return any(domain == item or domain.endswith(f".{item}") for item in _UNTRUSTED_SOCIAL_DOMAINS)
+
+
+def _is_opinion_page(url: str) -> bool:
+    path = (urlsplit(url).path or "").lower()
+    return any(marker in path for marker in _OPINION_PATH_MARKERS)
+
+
 def validate_web_results(raw_results: list[dict], max_results: int = 5) -> list[EvidenceSource]:
     """Normalize provider output and reject invalid or injected evidence."""
     unique: dict[str, EvidenceSource] = {}
@@ -55,7 +82,13 @@ def validate_web_results(raw_results: list[dict], max_results: int = 5) -> list[
         title = str(raw.get("title") or "").strip()
         excerpt = str(raw.get("snippet") or raw.get("content") or "").strip()
         domain = _domain(url)
-        if not title or not excerpt or injection_risk(f"{title}\n{excerpt}") == "high":
+        if (
+            not title
+            or not excerpt
+            or _is_untrusted_social_domain(domain)
+            or _is_opinion_page(url)
+            or injection_risk(f"{title}\n{excerpt}") == "high"
+        ):
             continue
         try:
             source = EvidenceSource(
