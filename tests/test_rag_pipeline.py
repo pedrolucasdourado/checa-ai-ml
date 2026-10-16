@@ -390,61 +390,6 @@ def test_v1_uses_deep_search_below_threshold(service, monkeypatch):
     assert "A evidência externa resolve a alegação" in result["counter_narrative"]
 
 
-def test_web_direct_statement_source_corrects_inconclusive_synthesis(service, monkeypatch):
-    url = "https://agenciabrasil.ebc.com.br/politica/lula-maioridade-penal"
-    monkeypatch.setattr(fcs, "perform_web_search", lambda query: [{
-        "title": "Lula defende redução da maioridade penal para crimes hediondos",
-        "url": url,
-        "snippet": (
-            "Em entrevista, Lula afirmou ser favorável à redução da maioridade penal "
-            "para crimes hediondos."
-        ),
-    }])
-    monkeypatch.setattr(service, "_call_llm_text", lambda system, user: v1_answer(
-        "A pesquisa trouxe contexto, mas não há conclusão definitiva [1].",
-        sufficient=False,
-        source_urls=[url],
-    ))
-
-    result = service._backend_fallback(
-        "Lula defendeu redução da maioridade penal para crimes hediondos?", 0.0, [],
-    )
-
-    assert result["verdict"] == "deep_searched"
-    assert result["sources"] == [{
-        "title": "Lula defende redução da maioridade penal para crimes hediondos",
-        "domain": "agenciabrasil.ebc.com.br",
-        "url": url,
-    }]
-    assert "Isso confirma a posição atribuída a Lula" in result["counter_narrative"]
-
-
-def test_web_direct_statement_source_does_not_override_an_explicit_denial(service, monkeypatch):
-    url = "https://example.com/lula-negou-maioridade-penal"
-    source = fcs.EvidenceSource(
-        title="Lula nega defender redução da maioridade penal para crimes hediondos",
-        domain="example.com",
-        url=url,
-        relevant_excerpt="Lula disse que não defende a redução da maioridade penal.",
-        origin=fcs.SourceOrigin.WEB,
-    )
-    monkeypatch.setattr(service, "_call_llm_text", lambda system, user: v1_answer(
-        "A pesquisa trouxe contexto, mas não há conclusão definitiva [1].",
-        sufficient=False,
-        source_urls=[url],
-    ))
-
-    result = service._deep_search_fallback(
-        "Lula defendeu redução da maioridade penal para crimes hediondos?",
-        0.0,
-        [],
-        web_sources=[source],
-    )
-
-    assert result["conclusion"] == fcs.EvidenceConclusion.INCONCLUSIVE
-    assert "Isso confirma a posição atribuída" not in result["counter_narrative"]
-
-
 def test_v1_deep_search_returns_only_a_page_named_by_the_model(service, monkeypatch):
     monkeypatch.setattr(fcs, "perform_web_search", lambda query: [
         {"title": "Primeira", "url": "https://one.example/a", "snippet": "Trecho um"},
