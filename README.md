@@ -59,6 +59,11 @@ curl -X POST http://localhost:18001/api/v1/verify \
   -d '{"text":"Mensagem a verificar"}'
 ```
 
+Campos opcionais para medir uso no Langfuse (aba *Users* e *Sessions*):
+`user_id` (pseudônimo do contato, formato `u_<hex 16–64>`, calculado pelo backend com HMAC) e
+`session_id` (`[A-Za-z0-9_-]{1,64}`). O formato estrito de `user_id` recusa telefones com `422`:
+dado pessoal não vai ao Langfuse (LGPD). Sem eles, nada muda.
+
 Na v1, `matched` inclui somente 1–2 laudos citados do corpus em `sources`.
 `deep_searched` é um resumo cauteloso da busca web, com até duas páginas
 efetivamente indicadas na síntese em `sources` (título, domínio e URL), sem
