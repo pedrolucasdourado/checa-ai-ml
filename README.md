@@ -99,10 +99,13 @@ CLASSIFIER_ENABLED=true
 já têm os defaults corretos no deploy (`bertimbau`, `/app/models/best_model_transformer`,
 `/opt/checa-ai/models`); só defina-as para mudar o padrão.
 
-Com `CLASSIFIER_ENABLED=true` e sem o ponteiro `.dvc`, o deploy **falha cedo** com a
-instrução acima. Se os pesos não puderem ser carregados em runtime, a requisição continua
-com `insufficient_evidence`; o serviço não inventa um veredito. O modelo é carregado na
-primeira inferência (alguns segundos a mais na primeira requisição).
+Se `CLASSIFIER_ENABLED=true` mas os pesos não puderem ser entregues (sem ponteiro `.dvc`,
+`dvc pull` ou `rsync` falhou), o deploy **não é bloqueado**: o classificador fica desligado
+só naquela release, com `::warning::` e um aviso no resumo do job, e o serviço segue como antes
+(`insufficient_evidence`). Para bloquear o deploy nesse caso, defina `CLASSIFIER_STRICT=true`.
+Se os pesos existirem mas não carregarem em runtime, a requisição também continua com
+`insufficient_evidence`, com o erro registrado em log; o serviço não inventa um veredito.
+O modelo é carregado na primeira inferência (alguns segundos a mais na primeira requisição).
 
 ### Teste via CLI (sem servidor)
 
