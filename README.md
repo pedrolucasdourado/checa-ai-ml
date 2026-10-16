@@ -76,22 +76,36 @@ O BERTimbau é um sinal auxiliar: ele só é chamado pelo endpoint interno
 utilizáveis. Ele não substitui uma conclusão baseada em evidências e não é
 usado pela interface `/api/debunk`.
 
-Os pesos não são versionados nem incluídos na imagem. Antes de ativar o
-recurso na VM, copie o diretório `best_model_transformer` para
-`/opt/checa-ai/models/best_model_transformer` (ou escolha outro diretório e
-configure `CLASSIFIER_MODELS_HOST_PATH`). Em *Settings → Secrets and variables
-→ Actions → Variables*, configure:
+Os pesos não ficam no Git nem na imagem: são versionados no **DVC**
+(`models/best_model_transformer.dvc`, mesmo remoto DagsHub do corpus) e o deploy os
+sincroniza para a VM (`/opt/checa-ai/models`, montado somente leitura em `/app/models`).
+Não é preciso copiar nada à mão.
+
+Uma vez (quem treinou o modelo):
+
+```bash
+dvc add models/best_model_transformer     # diretório completo: model.safetensors, config.json, tokenizer...
+dvc push
+git add models/best_model_transformer.dvc models/.gitignore
+```
+
+Para ativar, crie **uma** variável em *Settings → Secrets and variables → Actions → Variables*:
 
 ```text
 CLASSIFIER_ENABLED=true
-CLASSIFIER_BACKEND=bertimbau
-CLASSIFIER_BERTIMBAU_MODEL_PATH=/app/models/best_model_transformer
-CLASSIFIER_MODELS_HOST_PATH=/opt/checa-ai/models
 ```
 
-O deploy monta esse diretório como somente leitura em `/app/models`. Se os
-pesos estiverem ausentes ou não puderem ser carregados, a requisição continua
-com `insufficient_evidence`; o serviço não inventa um veredito.
+`CLASSIFIER_BACKEND`, `CLASSIFIER_BERTIMBAU_MODEL_PATH` e `CLASSIFIER_MODELS_HOST_PATH`
+já têm os defaults corretos no deploy (`bertimbau`, `/app/models/best_model_transformer`,
+`/opt/checa-ai/models`); só defina-as para mudar o padrão.
+
+Se `CLASSIFIER_ENABLED=true` mas os pesos não puderem ser entregues (sem ponteiro `.dvc`,
+`dvc pull` ou `rsync` falhou), o deploy **não é bloqueado**: o classificador fica desligado
+só naquela release, com `::warning::` e um aviso no resumo do job, e o serviço segue como antes
+(`insufficient_evidence`). Para bloquear o deploy nesse caso, defina `CLASSIFIER_STRICT=true`.
+Se os pesos existirem mas não carregarem em runtime, a requisição também continua com
+`insufficient_evidence`, com o erro registrado em log; o serviço não inventa um veredito.
+O modelo é carregado na primeira inferência (alguns segundos a mais na primeira requisição).
 
 ### Teste via CLI (sem servidor)
 

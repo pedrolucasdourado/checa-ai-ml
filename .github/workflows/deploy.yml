@@ -64,6 +64,76 @@ jobs:
           printf '%s\n' "$SSH_KEY" > ~/.ssh/id_deploy && chmod 600 ~/.ssh/id_deploy
           ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts
 
+      # Pesos do BERTimbau: versionados no DVC (models/best_model_transformer.dvc), nunca na imagem
+      # nem no Git. O deploy os baixa e os sincroniza (rsync, incremental) para a VM antes de subir.
+      #
+      # Degradação explícita: se CLASSIFIER_ENABLED=true mas os pesos não puderem ser entregues
+      # (sem ponteiro .dvc, pull ou rsync falhou), o deploy NÃO é bloqueado: o classificador é
+      # desligado só nesta release (output `enabled=false`), com ::warning:: e resumo do job.
+      # O app segue como antes (insufficient_evidence). Para falhar o deploy nesse caso, defina
+      # a variável CLASSIFIER_STRICT=true.
+      - name: Sincroniza pesos do classificador (DVC → VM)
+        id: classifier
+        env:
+          WANT: ${{ vars.CLASSIFIER_ENABLED || 'false' }}
+          STRICT: ${{ vars.CLASSIFIER_STRICT || 'false' }}
+          HOST: ${{ secrets.AZURE_VM_HOST }}
+          VM_USER: ${{ secrets.AZURE_VM_USER }}
+          DAGSHUB_USER: ${{ secrets.DAGSHUB_USER }}
+          DAGSHUB_TOKEN: ${{ secrets.DAGSHUB_TOKEN }}
+          MODELS_DIR: ${{ vars.CLASSIFIER_MODELS_HOST_PATH || '/opt/checa-ai/models' }}
+        run: |
+          if [ "$WANT" != "true" ]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "Classificador desabilitado (CLASSIFIER_ENABLED != true); nada a sincronizar."
+            exit 0
+          fi
+
+          sync_weights() {
+            POINTER=models/best_model_transformer.dvc
+            if [ ! -f "$POINTER" ]; then
+              echo "ponteiro $POINTER ausente: rode 'dvc add models/best_model_transformer && dvc push' e commite o .dvc"
+              return 1
+            fi
+            pip install -q "dvc>=3,<4"
+            if [ -n "$DAGSHUB_USER" ] && [ -n "$DAGSHUB_TOKEN" ]; then
+              dvc remote modify --local origin auth basic
+              dvc remote modify --local origin user "$DAGSHUB_USER"
+              dvc remote modify --local origin password "$DAGSHUB_TOKEN"
+            fi
+            dvc pull "$POINTER"
+            test -f models/best_model_transformer/config.json
+
+            SSH="ssh -i ~/.ssh/id_deploy $VM_USER@$HOST"
+            # Destino pertence ao usuário do deploy; leitura liberada ao uid do container.
+            $SSH "sudo -n mkdir -p '$MODELS_DIR/best_model_transformer' && sudo -n chown -R $VM_USER '$MODELS_DIR'"
+            rsync -az --delete -e "ssh -i ~/.ssh/id_deploy" \
+              models/best_model_transformer/ "$VM_USER@$HOST:$MODELS_DIR/best_model_transformer/"
+            $SSH "chmod -R a+rX '$MODELS_DIR' \
+              && test -f '$MODELS_DIR/best_model_transformer/config.json' \
+              && ls '$MODELS_DIR/best_model_transformer' | grep -Eq 'model.safetensors|pytorch_model.bin'"
+          }
+
+          # bash -e separado: dentro de `if (func)` o errexit seria ignorado e um erro no meio
+          # da função não a abortaria.
+          if bash -euo pipefail -c "$(declare -f sync_weights); sync_weights"; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+            echo "### Classificador: pesos sincronizados e ativado" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          if [ "$STRICT" = "true" ]; then
+            echo "::error::CLASSIFIER_ENABLED=true mas os pesos não foram entregues (CLASSIFIER_STRICT=true)."
+            exit 1
+          fi
+          echo "enabled=false" >> "$GITHUB_OUTPUT"
+          echo "::warning::CLASSIFIER_ENABLED=true mas os pesos não foram entregues; classificador DESLIGADO nesta release. Veja o log acima."
+          {
+            echo "### ⚠️ Classificador desligado nesta release"
+            echo "\`CLASSIFIER_ENABLED=true\`, mas não foi possível entregar os pesos à VM. O deploy seguiu sem o classificador."
+            echo "Corrija o ponteiro DVC/credenciais e rode o deploy de novo, ou defina \`CLASSIFIER_STRICT=true\` para bloquear."
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Atualiza código e .env na VM e sobe a nova versão
         id: up
         env:
@@ -79,7 +149,8 @@ jobs:
           PROMPT_LABEL: ${{ vars.PROMPT_LABEL || 'production' }}
           LLM_MODEL: ${{ vars.LLM_MODEL }}
           DOMAIN: ${{ vars.DOMAIN }}
-          CLASSIFIER_ENABLED: ${{ vars.CLASSIFIER_ENABLED || 'false' }}
+          # valor efetivo: o passo do classificador desliga se os pesos não chegaram
+          CLASSIFIER_ENABLED: ${{ steps.classifier.outputs.enabled || 'false' }}
           CLASSIFIER_BACKEND: ${{ vars.CLASSIFIER_BACKEND || 'bertimbau' }}
           CLASSIFIER_BERTIMBAU_MODEL_PATH: ${{ vars.CLASSIFIER_BERTIMBAU_MODEL_PATH || '/app/models/best_model_transformer' }}
           CLASSIFIER_MODELS_HOST_PATH: ${{ vars.CLASSIFIER_MODELS_HOST_PATH || '/opt/checa-ai/models' }}

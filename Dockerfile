@@ -6,7 +6,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-COPY requirements-prod.txt .
+# requirements-prod.txt inclui (-r) o requirements do classificador: copie os dois.
+COPY requirements-prod.txt requirements-classifier-runtime.txt ./
 RUN pip install -r requirements-prod.txt
 
 COPY app.py ./
