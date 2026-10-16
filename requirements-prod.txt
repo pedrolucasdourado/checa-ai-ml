@@ -12,7 +12,6 @@ pandas
 numpy
 tavily-python
 certifi
-# Optional runtime fallback classifier (BERTimbau).  The weights are mounted
-# separately in production; these packages allow the service to load them when
-# CLASSIFIER_ENABLED=true.
--r requirements-classifier-transformer.txt
+# Classificador de fallback (BERTimbau). Os pesos NÃO ficam na imagem: o deploy os sincroniza
+# do DVC para a VM e o compose os monta em /app/models. Estes pacotes só os carregam.
+-r requirements-classifier-runtime.txt

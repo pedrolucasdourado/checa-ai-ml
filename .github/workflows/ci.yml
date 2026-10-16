@@ -31,12 +31,20 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       rag: ${{ steps.filter.outputs.rag }}
+      image: ${{ steps.filter.outputs.image }}
     steps:
       - uses: actions/checkout@v4
       - id: filter
         uses: dorny/paths-filter@v3
         with:
           filters: |
+            image:
+              - 'Dockerfile'
+              - '.dockerignore'
+              - 'requirements-prod.txt'
+              - 'requirements-classifier-runtime.txt'
+              - 'src/**'
+              - 'app.py'
             rag:
               - 'src/rag/prompts.py'
               - 'src/rag/guardrails.py'
@@ -46,6 +54,23 @@ jobs:
               - 'evals/**'
               - 'scripts/eval_generation.py'
               - 'requirements-ci.txt'
+
+  # A imagem de produção só era construída no deploy: um requirements quebrado só aparecia depois
+  # do merge (já aconteceu). Constrói sem publicar quando algo que entra na imagem muda.
+  image:
+    needs: changes
+    if: needs.changes.outputs.image == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   # Prompt, modelo, parâmetros de RAG ou guardrails mudaram → eval de regressão.
   # PRs de forks não recebem secrets: o eval é pulado e o gate abaixo avisa.
@@ -60,12 +85,13 @@ jobs:
   # Único check obrigatório na proteção da branch: verde = tests ok e (eval ok ou não necessário).
   ci-ok:
     if: always()
-    needs: [tests, changes, eval]
+    needs: [tests, changes, eval, image]
     runs-on: ubuntu-latest
     steps:
       - run: |
-          echo "tests=${{ needs.tests.result }} eval=${{ needs.eval.result }}"
+          echo "tests=${{ needs.tests.result }} eval=${{ needs.eval.result }} image=${{ needs.image.result }}"
           [ "${{ needs.tests.result }}" = "success" ] || exit 1
+          case "${{ needs.image.result }}" in success|skipped) ;; *) exit 1 ;; esac
           case "${{ needs.eval.result }}" in success|skipped) ;; *) exit 1 ;; esac
           if [ "${{ needs.changes.outputs.rag }}" = "true" ] && [ "${{ needs.eval.result }}" = "skipped" ]; then
             echo "::warning::Eval não rodou (PR de fork sem secrets). Um mantenedor deve rodá-lo antes do merge."
