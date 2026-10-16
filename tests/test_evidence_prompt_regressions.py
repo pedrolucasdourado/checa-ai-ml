@@ -31,16 +31,22 @@ def _golden_by_id() -> dict[str, dict]:
     return {row["id"]: row for row in rows}
 
 
-def test_evidence_prompt_v5_encodes_inconclusive_boundary() -> None:
+def test_evidence_prompt_v7_encodes_inconclusive_boundary() -> None:
     normalized = " ".join(SYSTEM_PROMPT.casefold().split())
 
-    assert EVIDENCE_PROMPT_VERSION == "evidence-flow-v5"
+    assert EVIDENCE_PROMPT_VERSION == "evidence-flow-v7"
     assert "ausência de confirmação" in normalized
     assert "silêncio da fonte" in normalized
     assert "entidade/atribuição" in normalized
     assert "números diferentes" in normalized
     assert "negações simples ou duplas" in normalized
     assert "todos" in normalized and "contraexemplo explícito" in normalized
+    assert 'pessoa disse/afirmou p' in normalized
+    assert "não use a falsidade de p para contradizer que a pessoa disse p" in normalized
+    assert "máscaras reduzem oxigenação" in normalized
+    assert "aprovação em comissão ou em uma casa" in normalized
+    assert "entrada em vigor e implementação prática são fatos distintos" in normalized
+    assert "senado aprovou uma pec sobre a escala 6x1" in normalized
 
 
 @pytest.mark.parametrize(("case_id", "expected"), REGRESSION_GOLD.items())

@@ -1022,31 +1022,33 @@ class FactCheckService:
         return result
 
     @staticmethod
-    def _backend_result(verdict: str, score: float | None, narrative: str | None = None) -> dict:
-        return {
+    def _backend_result(
+        verdict: str,
+        score: float | None,
+        narrative: str | None = None,
+        *,
+        conclusion: EvidenceConclusion | str | None = None,
+        evidence_sufficient: bool | None = None,
+    ) -> dict:
+        result = {
             "schema_version": 1,
             "verdict": verdict,
             "similarity_score": round(score, 4) if score is not None else None,
             "counter_narrative": narrative,
             "sources": [],
         }
+        if conclusion is not None and evidence_sufficient is not None:
+            result["conclusion"] = (
+                conclusion.value if isinstance(conclusion, EvidenceConclusion) else conclusion
+            )
+            result["evidence_sufficient"] = evidence_sufficient
+        return result
 
     def _backend_fallback(self, text: str, score: float, evidences: list[Evidence]) -> dict:
         result = self._deep_search_fallback(
             text, score, evidences, include_model_sources=True,
         )
         if result["status"] == "deep_searched":
-            # A web search may find pages that are real but do not establish the
-            # claim. In that case, expose the textual-pattern classifier as an
-            # auxiliary signal. If it is unavailable, retain the cautious web
-            # response below rather than degrading a useful explanation.
-            if (
-                result.get("conclusion") == EvidenceConclusion.INCONCLUSIVE
-                or result.get("evidence_sufficient") is False
-            ):
-                auxiliary = classifier_narrative(text)
-                if auxiliary:
-                    return self._backend_result("deep_searched", score, auxiliary)
             declared = set(result.get("_model_source_urls", ()))
             sources = []
             source_chars = 0
@@ -1063,12 +1065,19 @@ class FactCheckService:
                     break
             if sources:
                 response = self._backend_result(
-                    "deep_searched", score, result["counter_narrative"],
+                    "deep_searched",
+                    score,
+                    result["counter_narrative"],
+                    conclusion=result.get("conclusion"),
+                    evidence_sufficient=result.get("evidence_sufficient"),
                 )
                 response["sources"] = sources
                 return response
         if result["status"] == "blocked":
             return self._backend_result("blocked", result["score"], result["counter_narrative"])
+        # O classificador é somente um sinal auxiliar para quando a busca não
+        # encontrou qualquer fonte utilizável. Nunca deve substituir uma
+        # síntese web fundamentada, ainda que ela seja inconclusiva.
         auxiliary = classifier_narrative(text)
         if auxiliary:
             return self._backend_result("deep_searched", score, auxiliary)
