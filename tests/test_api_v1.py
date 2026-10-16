@@ -76,11 +76,9 @@ async def test_invalid_inputs_return_422(client, fake_service):
 @pytest.mark.asyncio
 async def test_versioned_results_serialize_exactly(client, fake_service):
     _, result = fake_service
-    # Campos opcionais novos ausentes preservam exatamente o contrato legado.
     assert (await client.post("/api/v1/verify", json={"text": "x"})).json() == result
     result.update(verdict="deep_searched", similarity_score=0.1,
-                  counter_narrative="Pesquisa web cautelosa.", sources=[],
-                  conclusion="inconclusiva", evidence_sufficient=False)
+                  counter_narrative="Pesquisa web cautelosa.", sources=[])
     response = await client.post("/api/v1/verify", json={"text": "x"})
     assert response.status_code == 200
     assert response.json() == result
@@ -106,10 +104,6 @@ def test_openapi_verification_schema_has_four_verdicts_and_nullable_score():
     }
     score = schema["properties"]["similarity_score"]
     assert {item["type"] for item in score["anyOf"]} == {"number", "null"}
-    conclusion = schema["properties"]["conclusion"]
-    assert set(conclusion["anyOf"][0]["enum"]) == {
-        "sustentada", "contradita", "inconclusiva"
-    }
 
 
 @pytest.mark.asyncio

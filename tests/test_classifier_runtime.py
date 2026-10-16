@@ -38,7 +38,7 @@ def test_classifier_runs_only_after_web_returns_no_usable_source(monkeypatch):
     assert result["counter_narrative"] == "Foi identificado potencial alto de desinformação: 73%."
 
 
-def test_inconclusive_web_synthesis_with_usable_source_is_not_replaced_by_classifier(monkeypatch):
+def test_classifier_runs_after_inconclusive_web_synthesis(monkeypatch):
     service = object.__new__(FactCheckService)
     monkeypatch.setattr(service, "_deep_search_fallback", lambda *args, **kwargs: {
         "status": "deep_searched", "score": 0.2,
@@ -49,16 +49,14 @@ def test_inconclusive_web_synthesis_with_usable_source_is_not_replaced_by_classi
     })
     monkeypatch.setattr(
         "src.fact_check_service.classifier_narrative",
-        lambda text: (_ for _ in ()).throw(AssertionError("classifier should not run")),
+        lambda text: "Foi identificado potencial baixo de desinformação: 30%.",
     )
 
     result = service._backend_fallback("alegação", 0.2, [])
 
     assert result["verdict"] == "deep_searched"
-    assert result["sources"] == [{"title": "Fonte", "domain": "example.org", "url": "https://example.org"}]
-    assert result["counter_narrative"] == "As fontes não são conclusivas."
-    assert result["conclusion"] == "inconclusiva"
-    assert result["evidence_sufficient"] is False
+    assert result["sources"] == []
+    assert result["counter_narrative"] == "Foi identificado potencial baixo de desinformação: 30%."
 
 
 def test_conclusive_web_synthesis_does_not_call_classifier(monkeypatch):
@@ -79,8 +77,6 @@ def test_conclusive_web_synthesis_does_not_call_classifier(monkeypatch):
 
     assert result["counter_narrative"] == "A fonte contradiz a alegação."
     assert result["sources"] == [{"title": "Fonte", "domain": "example.org", "url": "https://example.org"}]
-    assert result["conclusion"] == "contradita"
-    assert result["evidence_sufficient"] is True
 
 
 def test_inconclusive_web_synthesis_is_preserved_when_classifier_is_unavailable(monkeypatch):

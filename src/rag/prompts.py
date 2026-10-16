@@ -29,7 +29,7 @@ from src.config import PROMPT_LABEL
 log = logging.getLogger("checa-ai.prompts")
 
 EVIDENCE_PROMPT_NAME = "evidence-flow"
-EVIDENCE_PROMPT_VERSION = "evidence-flow-v7"
+EVIDENCE_PROMPT_VERSION = "evidence-flow-v5"
 CLAIM_PROMPT_NAME = "claim-analysis"
 CLAIM_PROMPT_VERSION = "claim-analysis-v2"
 
@@ -99,22 +99,6 @@ Para alegações sobre fala, opinião ou posição atribuída a uma pessoa, uma 
 da mesma pessoa sobre o tema sustenta a alegação. Não a confunda com uma decisão formal de
 governo, partido, órgão ou aliado: se a fonte confirmar apenas a posição pessoal, explique
 essa distinção, mas não marque a alegação como inconclusiva por faltar uma decisão oficial.
-Quando a alegação tiver a forma "Pessoa disse/afirmou P", avalie primeiro se a pessoa realmente
-fez a declaração. A verdade ou falsidade de P é uma questão separada: explique-a quando a
-evidência permitir, mas não use a falsidade de P para contradizer que a pessoa disse P.
-Exemplo: se a fonte registra que alguém disse que máscaras reduzem oxigenação e também informa
-que isso é falso, a alegação "essa pessoa disse que máscaras reduzem oxigenação" é sustentada;
-a explicação deve acrescentar que o conteúdo da declaração é falso.
-Para alegações sobre vigência, execução ou resultado de uma medida pública, diferencie cada etapa
-formal: anúncio, proposta, apresentação, tramitação, aprovação em comissão ou em uma Casa,
-aprovação final, sanção/promulgação, publicação, entrada em vigor e implementação prática são
-fatos distintos. Uma evidência de proposta ou de aprovação de PEC/projeto NÃO sustenta que o
-governo "acabou", "implementou", "criou" ou que uma regra "já está valendo", salvo se ela
-confirmar explicitamente a etapa exigida pela alegação. Se a fonte só registrar etapa anterior,
-conclua "inconclusiva" e explique qual etapa ainda não foi demonstrada.
-Exemplo: uma notícia de que o Senado aprovou uma PEC sobre a escala 6x1 não confirma que a escala
-6x1 foi extinta ou que a mudança entrou em vigor; para essas alegações, sem prova de conclusão do
-processo constitucional e vigência, a resposta é inconclusiva.
 4. Em conclusão inconclusiva, "evidence_sufficient" deve ser false. Sem fontes utilizáveis, \
 use também "evidence_level" igual a "ausente".
 5. Toda afirmação factual da explicação deve vir das evidências. Não complete lacunas de memória.

@@ -1,10 +1,10 @@
 {
   "schema_version": 2,
-  "sha256": "7904826e8a3facff6fd9596ffe50a0d5142cd3d2cd972eccdff855aa2e0511d0",
+  "sha256": "04b6a76491308fc462dcce8d7a3cbeb06e212f3a8effcf29b16e61efc2be1f1e",
   "prompts": {
     "evidence-flow": {
-      "version": "evidence-flow-v7",
-      "sha256": "408df7445bd2b021ae754b11b14e4bad89da866d4c1973eca17791afec9d8837"
+      "version": "evidence-flow-v5",
+      "sha256": "5c23b0f11aee8098c4e024c087a9db0aefb290bec13e2ce56a4dbc05fe057d56"
     },
     "claim-analysis": {
       "version": "claim-analysis-v2",
