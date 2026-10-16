@@ -316,6 +316,10 @@ def run(args: argparse.Namespace) -> None:
         url=args.qdrant_url,
         path=args.qdrant_path,
         local_fallback=not args.require_docker,
+        # Criar uma coleção pode levar mais que o timeout operacional de 5 s
+        # após exclusão/restart no servidor. A ingestão é um job batch e pode
+        # aguardar com segurança, evitando abandonar uma recriação no meio.
+        timeout=60,
     )
     prepare_collection(client, args.collection, vector_size, recreate=args.recreate)
 
