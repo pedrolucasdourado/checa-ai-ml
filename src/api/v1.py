@@ -68,7 +68,9 @@ def require_internal_token(x_internal_token: str | None = Header(default=None)) 
 @router.post(
     "/api/v1/verify",
     response_model=VerifyResponse,
-    response_model_exclude_none=True,
+    # Campos legados nulos continuam no contrato. Os campos novos, ausentes no
+    # resultado do serviço, não são serializados para clientes antigos.
+    response_model_exclude_unset=True,
     dependencies=[Depends(require_internal_token)],
 )
 async def verify(body: VerifyRequest) -> VerifyResponse:

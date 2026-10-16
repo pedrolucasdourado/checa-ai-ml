@@ -76,9 +76,8 @@ async def test_invalid_inputs_return_422(client, fake_service):
 @pytest.mark.asyncio
 async def test_versioned_results_serialize_exactly(client, fake_service):
     _, result = fake_service
-    # Campos opcionais ausentes preservam o contrato legado: não expor nulls novos.
-    expected = {key: value for key, value in result.items() if value is not None}
-    assert (await client.post("/api/v1/verify", json={"text": "x"})).json() == expected
+    # Campos opcionais novos ausentes preservam exatamente o contrato legado.
+    assert (await client.post("/api/v1/verify", json={"text": "x"})).json() == result
     result.update(verdict="deep_searched", similarity_score=0.1,
                   counter_narrative="Pesquisa web cautelosa.", sources=[],
                   conclusion="inconclusiva", evidence_sufficient=False)
