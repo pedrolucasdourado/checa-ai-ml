@@ -26,6 +26,16 @@ def test_web_validation_discards_untrusted_social_sources(url):
     assert sources == []
 
 
+def test_web_validation_discards_wikipedia():
+    sources = validate_web_results([{
+        "title": "Brasil Sem Homofobia",
+        "snippet": "Página colaborativa que não deve sustentar a checagem.",
+        "url": "https://en.wikipedia.org/wiki/Brasil_Sem_Homofobia",
+    }])
+
+    assert sources == []
+
+
 @pytest.mark.parametrize("url", [
     "https://adiadorim.org/opiniao/2021/05/um-texto",
     "https://example.org/colunistas/autor/um-texto",
