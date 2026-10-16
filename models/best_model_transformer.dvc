@@ -1,0 +1,6 @@
+outs:
+- md5: 9e1ec752ad9a987e0c34d3c1a4f2fb5e.dir
+  size: 436617968
+  nfiles: 8
+  hash: md5
+  path: best_model_transformer

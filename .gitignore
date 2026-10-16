@@ -48,6 +48,7 @@ models/*
 !models/.gitkeep
 # ponteiros DVC dos modelos são versionados (os pesos, não)
 !models/*.dvc
+!models/**/.gitignore
 
 # Artefatos externos da avaliação offline de classificadores.
 artifacts/
