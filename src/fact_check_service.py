@@ -1125,17 +1125,6 @@ class FactCheckService:
             text, score, evidences, include_model_sources=True,
         )
         if result["status"] == "deep_searched":
-            # A web search may find pages that are real but do not establish the
-            # claim. In that case, expose the textual-pattern classifier as an
-            # auxiliary signal. If it is unavailable, retain the cautious web
-            # response below rather than degrading a useful explanation.
-            if (
-                result.get("conclusion") == EvidenceConclusion.INCONCLUSIVE
-                or result.get("evidence_sufficient") is False
-            ):
-                auxiliary = classifier_narrative(text)
-                if auxiliary:
-                    return self._backend_result("deep_searched", score, auxiliary)
             declared = set(result.get("_model_source_urls", ()))
             sources = []
             source_chars = 0
