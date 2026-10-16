@@ -70,7 +70,7 @@ from src.rag.retriever import (
     unique_sources,
     with_cluster_rerank,
 )
-from src.rag.entities import all_entities_present, extract_entities
+from src.rag.entities import all_entities_present, extract_entities, normalize
 from src.rag.hybrid import hybrid_rerank
 from src.rag.reranker import cross_encoder_rerank
 from src.rag import nli
@@ -108,6 +108,28 @@ _MIN_NARRATIVE_CHARS = 80
 _CITATION_PATTERN = re.compile(r"\[(\d+)\]")
 _CHUNK_CITATION_PATTERN = re.compile(r"\[(\d+),\s*trecho\s+\d+\]", re.IGNORECASE)
 _URL_PATTERN = re.compile(r"https?://[^\s\)\]\"'<>]+")
+_DIRECT_STATEMENT_PATTERN = re.compile(
+    r"(?P<subject>[A-ZÀ-Ý][\wÀ-ÿ]*(?:\s+(?:[A-ZÀ-Ý][\wÀ-ÿ]*|da|das|de|do|dos|e)){0,5})"
+    r"\s+(?P<verb>defend\w*|apoi\w*|afirm\w*|declar\w*|disse|diz|"
+    r"manifest\w*|posicion\w*|sustent\w*|admit\w*|confirm\w*)",
+)
+_DIRECT_STATEMENT_ROOTS = (
+    "defend", "apoi", "afirm", "declar", "disse", "diz", "manifest",
+    "posicion", "sustent", "admit", "confirm",
+)
+_DIRECT_STATEMENT_WORDS = re.compile(
+    r"\b(?:" + "|".join(_DIRECT_STATEMENT_ROOTS) + r")\w*\b"
+)
+_DIRECT_STATEMENT_NEGATION = re.compile(
+    r"\b(?:nao|nega\w*|desment\w*|rejeit\w*)\b(?:\s+\w+){0,2}\s+"
+    r"(?:" + "|".join(_DIRECT_STATEMENT_ROOTS) + r")\w*\b"
+)
+_DIRECT_STATEMENT_STOP_WORDS = frozenset({
+    "alegacao", "crime", "crimes", "como", "com", "contra", "defendeu",
+    "defende", "disse", "diz", "dos", "das", "ele", "ela", "essa", "este",
+    "isso", "lula", "maior", "para", "pela", "pelo", "que", "reduzir",
+    "sobre", "uma", "verdade",
+})
 _generation_version: ContextVar[str | None] = ContextVar("generation_version", default=None)
 
 
@@ -140,6 +162,60 @@ def _contradiction_has_entity_anchor(claim: str, sources: list[EvidenceSource]) 
     """Exige que a refutação mencione a entidade própria principal da alegação."""
     source_text = " ".join(f"{source.title} {source.relevant_excerpt}" for source in sources)
     return all_entities_present(claim, source_text)
+
+
+def _claim_topic_terms(claim: str, subject: str) -> set[str]:
+    """Return conservative content terms for matching a direct statement."""
+    subject_terms = set(re.findall(r"[a-z0-9]+", _normalize_text(subject)))
+    terms = set()
+    for word in re.findall(r"[a-z0-9]+", _normalize_text(claim)):
+        stem = word.removesuffix("s")
+        if (
+            len(stem) >= 5
+            and word not in _DIRECT_STATEMENT_STOP_WORDS
+            and stem not in subject_terms
+            and not any(stem.startswith(root) for root in _DIRECT_STATEMENT_ROOTS)
+        ):
+            terms.add(stem)
+    return terms
+
+
+def _normalize_text(value: str) -> str:
+    return normalize(value)
+
+
+def _direct_statement_source(query: str, sources: list[EvidenceSource]) -> tuple[str, EvidenceSource] | None:
+    """Find explicit web evidence for a person's attributed public position.
+
+    This narrow override only handles an otherwise inconclusive web synthesis.  It
+    requires the subject, a statement verb, and at least two topical terms in the
+    same validated source; a denial never qualifies as support.
+    """
+    match = _DIRECT_STATEMENT_PATTERN.search(query)
+    if not match:
+        return None
+    subject = match.group("subject").strip()
+    normalized_subject = _normalize_text(subject)
+    topic_terms = _claim_topic_terms(query, subject)
+    if len(topic_terms) < 2:
+        return None
+
+    subject_pattern = re.compile(rf"(?<!\w){re.escape(normalized_subject)}(?!\w)")
+    for source in sources:
+        source_text = _normalize_text(f"{source.title} {source.relevant_excerpt}")
+        if (
+            not subject_pattern.search(source_text)
+            or not _DIRECT_STATEMENT_WORDS.search(source_text)
+            or _DIRECT_STATEMENT_NEGATION.search(source_text)
+        ):
+            continue
+        source_terms = {
+            word.removesuffix("s")
+            for word in re.findall(r"[a-z0-9]+", source_text)
+        }
+        if len(topic_terms & source_terms) >= 2:
+            return subject, source
+    return None
 
 
 def _nli_check(claim: str, conclusion: EvidenceConclusion, sources: list[EvidenceSource]) -> dict[str, Any] | None:
@@ -607,6 +683,26 @@ class FactCheckService:
             )
         finally:
             current_prompt.reset(token)
+
+        if (
+            decision["conclusion"] is EvidenceConclusion.INCONCLUSIVE
+            or not decision["sufficient"]
+        ):
+            direct_source = _direct_statement_source(query, web_sources)
+            if direct_source is not None:
+                subject, source = direct_source
+                decision.update(
+                    conclusion=EvidenceConclusion.SUPPORTED,
+                    sufficient=True,
+                    level=EvidenceLevel.MODERATE,
+                    explanation=(
+                        f"Segundo a fonte, {source.title} [1]. Isso confirma a posição "
+                        f"atribuída a {subject}; não equivale, por si só, a uma decisão formal."
+                    ),
+                    sources=[source],
+                    model_source_urls=(source.url,),
+                )
+                logger.info("Síntese web inconclusiva corrigida por fonte direta validada.")
 
         if not decision["explanation"]:
             logger.warning("Síntese DeepSearch vazia")
